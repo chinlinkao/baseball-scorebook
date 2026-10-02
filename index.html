@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>棒球賽前攻守名單與守位安排 (Lineup Setup)</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent-red: #dc2626;
+      --accent-green: #16a34a;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --border-dark: #334155;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      padding-bottom: 70px;
+    }
+
+    /* 頂部導航列 */
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-brand h1 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-stage {
+      background: var(--accent-red);
+      color: white;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .view-switcher {
+      display: flex;
+      background: #1e293b;
+      padding: 3px;
+      border-radius: 8px;
+      gap: 4px;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .view-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* 主容器 */
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    /* 手機外框模式模擬 (桌機上切換手機時) */
+    .container.mode-mobile {
+      max-width: 440px;
+      background: #ffffff;
+      border: 8px solid #1e293b;
+      border-radius: 36px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      margin: 14px auto;
+      padding: 14px;
+    }
+
+    /* 賽事基本資訊卡片 */
+    .match-meta-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-group label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .form-input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* iPad 橫向左右雙欄對決佈局 */
+    .lineup-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 992px) {
+      .container:not(.mode-mobile) .lineup-grid {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+
+    /* 隊伍設定卡片 */
+    .team-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .team-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
+      margin-bottom: 14px;
+    }
+
+    .team-badge-pill {
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .pill-away { background: #fee2e2; color: #b91c1c; }
+    .pill-home { background: #dbeafe; color: #1d4ed8; }
+
+    .team-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #334155;
+    }
+
+    .btn-sm:hover { background: #f8fafc; }
+
+    /* 先發投手卡片 */
+    .pitcher-select-box {
+      background: #f8fafc;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pitcher-label {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 棒次排列表格 (Lineup Table) */
+    .lineup-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .lineup-table th, .lineup-table td {
+      padding: 8px 6px;
+      text-align: left;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    .lineup-table th {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: #f8fafc;
+    }
+
+    .order-col {
+      width: 32px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-align: center;
+      color: #475569;
+    }
+
+    .player-select {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      background: white;
+    }
+
+    .pos-select {
+      width: 90px;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: #f8fafc;
+    }
+
+    /* 手機專屬頁籤導航 (手機模式下客/主隊切換) */
+    .mobile-team-tabs {
+      display: none;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .mobile-tab-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      background: #e2e8f0;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .mobile-tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* 底部固定啟動按鈕 */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 90;
+      box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .start-game-btn {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3);
+      transition: all 0.2s;
+    }
+
+    .start-game-btn:active {
+      transform: scale(0.97);
+    }
+
+    .validation-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部操作列 -->
+  <header>
+    <div class="header-brand">
+      <h1>⚾ 棒球賽前攻守名單安排</h1>
+      <span class="badge-stage">賽前排定階段</span>
+    </div>
+
+    <div class="view-switcher">
+      <button class="view-btn active" id="btn-view-ipad" onclick="setDeviceMode('ipad')">
+        💻 iPad 雙隊並排
+      </button>
+      <button class="view-btn" id="btn-view-mobile" onclick="setDeviceMode('mobile')">
+        📱 手機分頁
+      </button>
+    </div>
+  </header>
+
+  <main class="container" id="main-container">
+
+    <!-- 1. 賽事抬頭資訊 -->
+    <div class="match-meta-card">
+      <div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 4px;">🏆 賽事與裁判設定</div>
+      <div class="meta-grid">
+        <div class="form-group">
+          <label>盃賽名稱</label>
+          <input type="text" id="meta-title" class="form-input" value="2026年台中市棒球聯賽">
+        </div>
+        <div class="form-group">
+          <label>比賽日期</label>
+          <input type="date" id="meta-date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>比賽球場</label>
+          <input type="text" id="meta-field" class="form-input" value="台中太原棒球場">
+        </div>
+        <div class="form-group">
+          <label>主審裁判</label>
+          <input type="text" id="meta-umpire" class="form-input" value="紀華文">
+        </div>
+        <div class="form-group">
+          <label>官方記錄員</label>
+          <input type="text" id="meta-scorer" class="form-input" value="王小明">
+        </div>
+      </div>
+    </div>
+
+    <!-- 手機模式專屬隊伍分頁切換 -->
+    <div class="mobile-team-tabs" id="mobile-tabs-bar">
+      <button class="mobile-tab-btn active" id="tab-away-btn" onclick="switchMobileTeam('away')">
+        先攻：台中小海盜
+      </button>
+      <button class="mobile-tab-btn" id="tab-home-btn" onclick="switchMobileTeam('home')">
+        後攻：對手獵犬隊
+      </button>
+    </div>
+
+    <!-- 2. 左右雙欄陣容安排 (iPad並排 / 手機分頁) -->
+    <div class="lineup-grid">
+
+      <!-- (A) 客隊先攻卡片 (台中小海盜大叔隊) -->
+      <div class="team-card" id="card-team-away">
+        <div class="team-card-header">
+          <div>
+            <span class="team-badge-pill pill-away">先攻 (客隊)</span>
+            <input type="text" id="team-away-name" class="form-input" value="台中小海盜大叔隊" style="font-weight: 800; width: 180px; display: inline-block; margin-left: 8px;">
+          </div>
+          <div class="team-actions">
+            <button class="btn-sm" onclick="resetPiratesPreset()">載入小海盜先發</button>
+          </div>
+        </div>
+
+        <!-- 先發投手選擇 -->
+        <div class="pitcher-select-box">
+          <span class="pitcher-label">⚾ 先發投手 (SP)：</span>
+          <select id="away-pitcher-select" class="player-select" style="width: 220px;" onchange="syncPitcherPos('away')">
+            <!-- 由 JS 動態填充 28 人名單 -->
+          </select>
+        </div>
+
+        <!-- 1~9 棒次排列表格 -->
+        <table class="lineup-table">
+          <thead>
+            <tr>
+              <th style="width: 36px; text-align: center;">棒次</th>
+              <th>打者 (姓名 / 背號)</th>
+              <th style="width: 100px;">守備位置</th>
+            </tr>
+          </thead>
+          <tbody id="away-lineup-tbody">
+            <!-- JS 動態產生 1~9 棒 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- (B) 主隊後攻卡片 (對手球隊) -->
+      <div class="team-card" id="card-team-home">
+        <div class="team-card-header">
+          <div>
+            <span class="team-badge-pill pill-home">後攻 (主隊)</span>
+            <input type="text" id="team-home-name" class="form-input" value="台中獵犬棒球隊" style="font-weight: 800; width: 180px; display: inline-block; margin-left: 8px;">
+          </div>
+          <div class="team-actions">
+            <button class="btn-sm" onclick="resetHomePreset()">載入範本陣容</button>
+          </div>
+        </div>
+
+        <!-- 先發投手選擇 -->
+        <div class="pitcher-select-box">
+          <span class="pitcher-label">⚾ 先發投手 (SP)：</span>
+          <select id="home-pitcher-select" class="player-select" style="width: 220px;" onchange="syncPitcherPos('home')">
+            <!-- JS 動態填充 -->
+          </select>
+        </div>
+
+        <!-- 1~9 棒次排列表格 -->
+        <table class="lineup-table">
+          <thead>
+            <tr>
+              <th style="width: 36px; text-align: center;">棒次</th>
+              <th>打者 (姓名 / 背號)</th>
+              <th style="width: 100px;">守備位置</th>
+            </tr>
+          </thead>
+          <tbody id="home-lineup-tbody">
+            <!-- JS 動態產生 1~9 棒 -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 底部固定確認欄 -->
+  <footer class="bottom-bar">
+    <div class="validation-hint" id="validation-hint-text">
+      ✔ 先發名單檢核完畢，隨時可開打
+    </div>
+    <button class="start-game-btn" onclick="submitLineupAndStartGame()">
+      確認名單並開打 ➔
+    </button>
+  </footer>
+
+  <!-- 引用名冊模組 -->
+  <script src="./roster_pirates.js"></script>
+
+  <script>
+    // 守備位置清單
+    const POSITIONS = [
+      { code: "1", label: "1 (P 投手)" },
+      { code: "2", label: "2 (C 捕手)" },
+      { code: "3", label: "3 (1B 一壘)" },
+      { code: "4", label: "4 (2B 二壘)" },
+      { code: "5", label: "5 (3B 三壘)" },
+      { code: "6", label: "6 (SS 游擊)" },
+      { code: "7", label: "7 (LF 左外)" },
+      { code: "8", label: "8 (CF 中外)" },
+      { code: "9", label: "9 (RF 右外)" },
+      { code: "DH", label: "DH (指定打擊)" }
+    ];
+
+    // 主隊範本 15 人名冊
+    const HOME_PRESET_PLAYERS = [
+      { id: "H01", number: "7",  name: "張志豪", defaultPos: "8", defaultOrder: 1 },
+      { id: "H02", number: "9",  name: "王威晨", defaultPos: "5", defaultOrder: 2 },
+      { id: "H03", number: "39", name: "詹子賢", defaultPos: "7", defaultOrder: 3 },
+      { id: "H04", number: "25", name: "許基宏", defaultPos: "3", defaultOrder: 4 },
+      { id: "H05", number: "90", name: "江坤宇", defaultPos: "6", defaultOrder: 5 },
+      { id: "H06", number: "4",  name: "陳文杰", defaultPos: "9", defaultOrder: 6 },
+      { id: "H07", number: "74", name: "許躍騰", defaultPos: "2", defaultOrder: 7 },
+      { id: "H08", number: "66", name: "黃韋盛", defaultPos: "4", defaultOrder: 8 },
+      { id: "H09", number: "19", name: "鄭凱文", defaultPos: "1", defaultOrder: 9 }, // 投手
+      { id: "H10", number: "1",  name: "陳子豪", defaultPos: "BN" },
+      { id: "H11", number: "11", name: "廖乙忠", defaultPos: "BN" },
+      { id: "H12", number: "42", name: "陳家駒", defaultPos: "BN" }
+    ];
+
+    let currentDevice = 'ipad'; // 'ipad' | 'mobile'
+    let activeMobileTeam = 'away'; // 'away' | 'home'
+
+    // 當前先發狀態
+    let awayLineupState = [];
+    let homeLineupState = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('meta-date').value = new Date().toISOString().split('T')[0];
+      initAwayLineup();
+      initHomeLineup();
+      renderAll();
+    });
+
+    // 切換裝置視角
+    function setDeviceMode(mode) {
+      currentDevice = mode;
+      const container = document.getElementById('main-container');
+      const tabsBar = document.getElementById('mobile-tabs-bar');
+      const btnIpad = document.getElementById('btn-view-ipad');
+      const btnMobile = document.getElementById('btn-view-mobile');
+
+      if (mode === 'mobile') {
+        container.classList.add('mode-mobile');
+        tabsBar.style.display = 'flex';
+        btnMobile.classList.add('active');
+        btnIpad.classList.remove('active');
+        applyMobileTeamTab();
+      } else {
+        container.classList.remove('mode-mobile');
+        tabsBar.style.display = 'none';
+        document.getElementById('card-team-away').style.display = 'block';
+        document.getElementById('card-team-home').style.display = 'block';
+        btnIpad.classList.add('active');
+        btnMobile.classList.remove('active');
+      }
+    }
+
+    function switchMobileTeam(team) {
+      activeMobileTeam = team;
+      document.getElementById('tab-away-btn').classList.toggle('active', team === 'away');
+      document.getElementById('tab-home-btn').classList.toggle('active', team === 'home');
+      applyMobileTeamTab();
+    }
+
+    function applyMobileTeamTab() {
+      if (currentDevice !== 'mobile') return;
+      document.getElementById('card-team-away').style.display = (activeMobileTeam === 'away') ? 'block' : 'none';
+      document.getElementById('card-team-home').style.display = (activeMobileTeam === 'home') ? 'block' : 'none';
+    }
+
+    // 初始化客隊（台中小海盜 28 人）
+    function initAwayLineup() {
+      const starters = PIRATES_ROSTER.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder);
+      awayLineupState = starters.map((p, idx) => ({
+        order: idx + 1,
+        playerId: p.id,
+        pos: p.defaultPos
+      }));
+    }
+
+    // 初始化主隊（對手）
+    function initHomeLineup() {
+      const starters = HOME_PRESET_PLAYERS.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder);
+      homeLineupState = starters.map((p, idx) => ({
+        order: idx + 1,
+        playerId: p.id,
+        pos: p.defaultPos
+      }));
+    }
+
+    function renderAll() {
+      renderPitcherSelect('away');
+      renderPitcherSelect('home');
+      renderLineupTable('away');
+      renderLineupTable('home');
+    }
+
+    // 渲染先發投手下拉選單
+    function renderPitcherSelect(teamKey) {
+      const select = document.getElementById(`${teamKey}-pitcher-select`);
+      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_PRESET_PLAYERS;
+
+      select.innerHTML = roster.map(p => `
+        <option value="${p.id}" ${p.defaultPos === '1' ? 'selected' : ''}>
+          #${p.number} ${p.name}
+        </option>
+      `).join('');
+    }
+
+    // 渲染 1~9 棒次排列表格
+    function renderLineupTable(teamKey) {
+      const tbody = document.getElementById(`${teamKey}-lineup-tbody`);
+      const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
+      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_PRESET_PLAYERS;
+
+      tbody.innerHTML = lineup.map((slot, idx) => {
+        // 球員選單
+        const playerOptions = roster.map(p => `
+          <option value="${p.id}" ${p.id === slot.playerId ? 'selected' : ''}>
+            #${p.number} ${p.name}
+          </option>
+        `).join('');
+
+        // 守位選單
+        const posOptions = POSITIONS.map(pos => `
+          <option value="${pos.code}" ${pos.code === slot.pos ? 'selected' : ''}>
+            ${pos.label}
+          </option>
+        `).join('');
+
+        return `
+          <tr>
+            <td class="order-col">${slot.order}</td>
+            <td>
+              <select class="player-select" onchange="onPlayerChange('${teamKey}', ${idx}, this.value)">
+                ${playerOptions}
+              </select>
+            </td>
+            <td>
+              <select class="pos-select" onchange="onPosChange('${teamKey}', ${idx}, this.value)">
+                ${posOptions}
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function onPlayerChange(teamKey, idx, newPlayerId) {
+      const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
+      lineup[idx].playerId = newPlayerId;
+    }
+
+    function onPosChange(teamKey, idx, newPos) {
+      const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
+      lineup[idx].pos = newPos;
+    }
+
+    function resetPiratesPreset() {
+      initAwayLineup();
+      renderLineupTable('away');
+      renderPitcherSelect('away');
+      alert("已重新載入台中小海盜大叔隊建議先發陣容！");
+    }
+
+    function resetHomePreset() {
+      initHomeLineup();
+      renderLineupTable('home');
+      renderPitcherSelect('home');
+      alert("已重置為範本先發陣容！");
+    }
+
+    // 送出先發名單並進入 baseball_scorebook_app.html
+    function submitLineupAndStartGame() {
+      // 1. 組裝客隊先發
+      const awayStarters = awayLineupState.map(slot => {
+        const p = PIRATES_ROSTER.find(item => item.id === slot.playerId);
+        return {
+          order: slot.order,
+          id: p.id,
+          number: p.number,
+          name: p.name,
+          pos: slot.pos
+        };
+      });
+
+      // 取得客隊投手
+      const awayPitcherId = document.getElementById('away-pitcher-select').value;
+      const awayPitcher = PIRATES_ROSTER.find(p => p.id === awayPitcherId) || PIRATES_ROSTER[0];
+
+      // 2. 組裝主隊先發
+      const homeStarters = homeLineupState.map(slot => {
+        const p = HOME_PRESET_PLAYERS.find(item => item.id === slot.playerId);
+        return {
+          order: slot.order,
+          id: p.id,
+          number: p.number,
+          name: p.name,
+          pos: slot.pos
+        };
+      });
+
+      // 取得主隊投手
+      const homePitcherId = document.getElementById('home-pitcher-select').value;
+      const homePitcher = HOME_PRESET_PLAYERS.find(p => p.id === homePitcherId) || HOME_PRESET_PLAYERS[8];
+
+      // 3. 賽事資訊
+      const matchSetup = {
+        meta: {
+          title: document.getElementById('meta-title').value,
+          date: document.getElementById('meta-date').value,
+          field: document.getElementById('meta-field').value,
+          umpire: document.getElementById('meta-umpire').value,
+          scorer: document.getElementById('meta-scorer').value
+        },
+        away: {
+          name: document.getElementById('team-away-name').value,
+          lineup: awayStarters,
+          pitcher: { name: awayPitcher.name, number: awayPitcher.number }
+        },
+        home: {
+          name: document.getElementById('team-home-name').value,
+          lineup: homeStarters,
+          pitcher: { name: homePitcher.name, number: homePitcher.number }
+        },
+        timestamp: Date.now()
+      };
+
+      // 存入 localStorage 供記分網頁讀取
+      localStorage.setItem('baseball_game_setup', JSON.stringify(matchSetup));
+
+      // 跳轉至比賽紀錄系統
+      window.location.href = './baseball_scorebook_app.html';
+    }
+  </script>
+</body>
+</html>

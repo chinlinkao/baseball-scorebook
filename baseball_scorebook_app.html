@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>早稻田式棒球紀錄系統 - 台中小海盜大叔隊 (完整實作版)</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent-red: #dc2626;
+      --accent-green: #16a34a;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --border-dark: #334155;
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    /* 頂部固定控制列 */
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-left h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .header-badge {
+      background: var(--accent-red);
+      color: white;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .header-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      background: #334155;
+      color: #f1f5f9;
+      border: 1px solid #475569;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .tool-btn:hover { background: #475569; }
+    .tool-btn.active { background: var(--primary); border-color: var(--primary); }
+
+    /* 主容器 */
+    .app-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    /* 模擬手機外框模式 (當在桌機點選手機模式時) */
+    .app-container.mode-mobile {
+      max-width: 430px;
+      background: #ffffff;
+      border: 8px solid #1e293b;
+      border-radius: 36px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      margin: 12px auto;
+      padding: 12px;
+    }
+
+    /* iPad 橫向雙欄佈局 */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    @media (min-width: 1024px) {
+      .app-container:not(.mode-mobile) .dashboard-grid {
+        grid-template-columns: 1fr 430px;
+        align-items: start;
+      }
+    }
+
+    /* 頂部即時比分與球數燈 (Scoreboard) */
+    .scoreboard-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    .match-teams {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .team-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .team-cell .name {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .team-cell .runs {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .inning-pill {
+      background: #334155;
+      padding: 6px 14px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .inning-pill .inn-text {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .inning-pill .inn-sub {
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+
+    /* 球數指示燈 */
+    .count-indicators {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .count-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .count-label {
+      width: 14px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #94a3b8;
+    }
+
+    .lamp {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #334155;
+      display: inline-block;
+      transition: all 0.2s;
+    }
+
+    .lamp.ball.active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .lamp.strike.active { background: #eab308; box-shadow: 0 0 8px #eab308; }
+    .lamp.out.active { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+    /* 通用卡片容器 */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 當前對決與壘包狀態卡片 */
+    .matchup-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .batter-profile {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .batter-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .batter-title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 2px 0;
+    }
+
+    .batter-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .batter-num {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--accent-red);
+    }
+
+    .batter-pos {
+      background: #e2e8f0;
+      font-size: 0.78rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* 壘包動態圖 */
+    .diamond-display {
+      width: 76px;
+      height: 76px;
+      position: relative;
+    }
+
+    .base-node {
+      width: 15px;
+      height: 15px;
+      border: 2px solid #94a3b8;
+      background: white;
+      position: absolute;
+      transform: rotate(45deg);
+      transition: all 0.2s;
+    }
+
+    .base-node.occupied {
+      background: #e11d48;
+      border-color: #be123c;
+      box-shadow: 0 0 8px rgba(225, 29, 72, 0.7);
+    }
+
+    .base-node.node-home { bottom: 2px; left: 30px; }
+    .base-node.node-1b { bottom: 30px; right: 2px; }
+    .base-node.node-2b { top: 2px; left: 30px; }
+    .base-node.node-3b { bottom: 30px; left: 2px; }
+
+    /* 逐球好壞球控制列 */
+    .pitch-strip {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pitch-key {
+      flex: 1;
+      padding: 9px 4px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .pitch-key:active { transform: scale(0.97); background: #f1f5f9; }
+    .pitch-key.key-ball { color: #16a34a; }
+    .pitch-key.key-strike { color: #d97706; }
+    .pitch-key.key-foul { color: #475569; }
+
+    /* 打擊結果快捷鍵盤 */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .key-btn {
+      padding: 12px 4px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s;
+    }
+
+    .key-btn:active { transform: scale(0.96); }
+    .key-btn span.sub { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
+
+    .key-btn.hit { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+    .key-btn.walk { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .key-btn.out { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+
+    /* 守備位置快速九宮格 (Field Selector) */
+    .field-picker {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pos-btn {
+      padding: 8px 4px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .pos-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* 擊球物理軌跡選擇器 (滾地/平飛/高飛) */
+    .traj-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .traj-btn {
+      padding: 9px 4px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .traj-btn:active { transform: scale(0.97); }
+    .traj-btn.active {
+      background: #0284c7;
+      color: white;
+      border-color: #0284c7;
+      box-shadow: 0 0 6px rgba(2, 132, 199, 0.4);
+    }
+
+    /* 雙守備方位選擇面板 (守備方位1 & 守備方位2) */
+    .field-dual-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+
+    .field-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .field-sub-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .pos-mini-btn {
+      padding: 6px 2px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .pos-mini-btn:active { transform: scale(0.96); }
+    .pos-mini-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .pos-mini-btn.btn-none {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .pos-mini-btn.btn-none.active {
+      background: #475569;
+      color: white;
+      border-color: #475569;
+    }
+
+    .code-preview-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #1e40af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* 早稻田數位紙本表格 (Score Matrix) */
+    .table-scroll-wrap {
+      overflow-x: auto;
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .scorebook-grid-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 900px;
+    }
+
+    .scorebook-grid-table th, .scorebook-grid-table td {
+      border: 1px solid #334155;
+      text-align: center;
+      vertical-align: middle;
+      padding: 2px 4px;
+    }
+
+    .scorebook-grid-table th {
+      background: #f1f5f9;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .scorebook-grid-table th.sub-th {
+      font-size: 0.7rem;
+      background: #e2e8f0;
+    }
+
+    .player-title-col {
+      text-align: left;
+      padding: 4px 6px;
+      min-width: 100px;
+    }
+
+    .player-title-col .name { font-weight: 800; font-size: 0.88rem; }
+    .player-title-col .meta { font-size: 0.72rem; color: var(--text-muted); }
+
+    /* 統計小總計欄 */
+    .stat-num {
+      font-size: 0.82rem;
+      font-weight: 700;
+      width: 28px;
+    }
+
+    /* 投手統計表 (Pitching Table) */
+    .pitcher-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .pitcher-table th, .pitcher-table td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: center;
+      font-size: 0.82rem;
+    }
+
+    .pitcher-table th {
+      background: #f8fafc;
+      font-weight: 700;
+    }
+
+    /* 平衡檢核區塊 */
+    .balance-box {
+      background: #f8fafc;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+    }
+
+    .balance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    /* 即時逐打席轉播 (Play-by-Play Feed) */
+    .pbp-container {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pbp-card {
+      background: #f8fafc;
+      border-left: 3px solid var(--primary);
+      padding: 6px 10px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.82rem;
+    }
+
+    .pbp-card .time {
+      font-weight: 700;
+      color: var(--primary);
+      margin-right: 4px;
+    }
+
+    /* 彈出模態視窗 */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);
+    }
+
+    .modal-box .title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .runner-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.9rem;
+    }
+
+    .select-input {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn-act {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-act.primary { background: var(--primary); color: white; }
+    .btn-act.secondary { background: #e2e8f0; color: #334155; }
+
+    /* 列印專用樣式 (100% 完美還原 record.jpg 紙本報表) */
+    @media print {
+      header, .header-tools, .matchup-container, .pitch-strip, .keypad, .field-picker, .pbp-container, .balance-box, .tool-btn {
+        display: none !important;
+      }
+
+      body {
+        background: white;
+        color: black;
+        padding: 0;
+      }
+
+      .app-container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .scorebook-grid-table th, .scorebook-grid-table td {
+        border-color: #000000 !important;
+      }
+
+      .print-header-ctba {
+        display: block !important;
+        text-align: center;
+        border-bottom: 2px solid black;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+      }
+    }
+
+    .print-header-ctba {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部操作列 -->
+  <header>
+    <div class="header-left">
+      <h1>⚾ 棒球數位紀錄系統</h1>
+      <span class="header-badge">台中小海盜大叔隊</span>
+    </div>
+
+    <div class="header-tools">
+      <button class="tool-btn" onclick="window.location.href='./lineup_setup.html'" style="background: #e11d48; border-color: #be123c;">
+        ⚙️ 先發名單排定
+      </button>
+      <button class="tool-btn active" id="btn-view-ipad" onclick="setDeviceView('ipad')">
+        💻 iPad 雙欄
+      </button>
+      <button class="tool-btn" id="btn-view-mobile" onclick="setDeviceView('mobile')">
+        📱 手機速記
+      </button>
+      <button class="tool-btn" onclick="openPrintView()">
+        🖨️ 列印紙本
+      </button>
+      <button class="tool-btn" onclick="openRosterDialog()">
+        👥 名冊調度 (28人)
+      </button>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="app-container" id="main-container">
+
+    <!-- 列印專用紙本抬頭 (完全對應 record.jpg) -->
+    <div class="print-header-ctba">
+      <h2 style="font-size: 1.3rem; margin-bottom: 4px;">中華民國棒球協會 標準比賽紀錄表</h2>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0 10px;">
+        <span>賽事：2026年台中市棒球聯賽</span>
+        <span>日期：2026年10月01日</span>
+        <span>場地：台中太原棒球場</span>
+        <span>主審：紀華文</span>
+        <span>記錄員：王小明</span>
+      </div>
+    </div>
+
+    <!-- 頂部計分板 (Scoreboard) -->
+    <section class="scoreboard-banner">
+      <div class="match-teams">
+        <div class="team-cell">
+          <span class="name" id="away-name-label">台中小海盜 (客)</span>
+          <span class="runs" id="score-away-text">3</span>
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #64748b;">:</div>
+        <div class="team-cell">
+          <span class="name" id="home-name-label">台中獵犬隊 (主)</span>
+          <span class="runs" id="score-home-text">1</span>
+        </div>
+      </div>
+
+      <div class="inning-pill" onclick="switchHalfInningManually()">
+        <div class="inn-text" id="inning-status-text">▲ 1 局 上</div>
+        <div class="inn-sub" id="batting-team-sub">台中小海盜 進攻</div>
+      </div>
+
+      <!-- 好壞球與出局燈 -->
+      <div class="count-indicators">
+        <div class="count-row">
+          <span class="count-label">B</span>
+          <span class="lamp ball" id="lamp-b1"></span>
+          <span class="lamp ball" id="lamp-b2"></span>
+          <span class="lamp ball" id="lamp-b3"></span>
+        </div>
+        <div class="count-row">
+          <span class="count-label">S</span>
+          <span class="lamp strike" id="lamp-s1"></span>
+          <span class="lamp strike" id="lamp-s2"></span>
+        </div>
+        <div class="count-row">
+          <span class="count-label">O</span>
+          <span class="lamp out" id="lamp-o1"></span>
+          <span class="lamp out" id="lamp-o2"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 雙欄 / 單欄 主體佈局 -->
+    <div class="dashboard-grid">
+
+      <!-- 左欄：早稻田數位紙本 9×9 大矩陣與統計表 (100% 還原 record.jpg) -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>📋 早稻田式紙本紀錄簿 (逐局自動繪製)</span>
+            </div>
+            <!-- 切換主客隊檢視 -->
+            <div style="display: flex; gap: 4px;">
+              <button class="tool-btn active" id="btn-tab-away" onclick="switchScorebookTab('away')">先攻 (小海盜)</button>
+              <button class="tool-btn" id="btn-tab-home" onclick="switchScorebookTab('home')">後攻 (對手)</button>
+            </div>
+          </div>
+
+          <!-- 9×9 矩陣滾動表格 -->
+          <div class="table-scroll-wrap">
+            <table class="scorebook-grid-table">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="width: 26px;">棒</th>
+                  <th rowspan="2" style="width: 28px;">守</th>
+                  <th rowspan="2" style="width: 100px;">先發球員</th>
+                  <th colspan="7">各局早稻田式打席紀錄 (1 ~ 7 局)</th>
+                  <th colspan="6">個人打擊統計總計</th>
+                </tr>
+                <tr>
+                  <th style="width: 95px;">1</th>
+                  <th style="width: 95px;">2</th>
+                  <th style="width: 95px;">3</th>
+                  <th style="width: 95px;">4</th>
+                  <th style="width: 95px;">5</th>
+                  <th style="width: 95px;">6</th>
+                  <th style="width: 95px;">7</th>
+                  <th class="sub-th" style="width: 24px;">PA</th>
+                  <th class="sub-th" style="width: 24px;">AB</th>
+                  <th class="sub-th" style="width: 24px;">H</th>
+                  <th class="sub-th" style="width: 24px;">R</th>
+                  <th class="sub-th" style="width: 24px;">RBI</th>
+                  <th class="sub-th" style="width: 24px;">BB</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-tbody">
+                <!-- 由 JavaScript 動態繪製先發 9 棒與早稻田 SVG 菱形格 -->
+              </tbody>
+              <!-- 局得分統計底行 (對應 record.jpg 局底 R/H/E) -->
+              <tfoot id="matrix-tfoot">
+                <!-- 動態注入 -->
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- 下方投手統計欄 (對應 record.jpg 下方表格) -->
+          <div style="margin-top: 14px;">
+            <div class="card-title" style="font-size: 0.85rem;">⚾ 投手投球數據統計 (Pitching Stats)</div>
+            <table class="pitcher-table">
+              <thead>
+                <tr>
+                  <th>投手背號/姓名</th>
+                  <th>勝敗</th>
+                  <th>局數 (IP)</th>
+                  <th>投球數 (NP)</th>
+                  <th>面對打席 (BF)</th>
+                  <th>被安打 (H)</th>
+                  <th>全壘打 (HR)</th>
+                  <th>奪三振 (SO)</th>
+                  <th>四死球 (BB)</th>
+                  <th>失分 (R)</th>
+                  <th>自責分 (ER)</th>
+                </tr>
+              </thead>
+              <tbody id="pitcher-tbody">
+                <!-- JS 動態生成 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 早稻田平衡檢核等式 (完全對應 record.jpg 右下角公式) -->
+          <div class="balance-box">
+            <div class="balance-badge" id="balance-badge-1">
+              ✔ 公式一 (打席平衡)：PA = AB + BB + HBP + SH + SF (帳目相符)
+            </div>
+            <div class="balance-badge" id="balance-badge-2">
+              ✔ 公式二 (局況平衡)：PA = R + LOB + PO (殘壘與出局相符)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右欄：打席觸控輸入主控台 (手機直式核心) -->
+      <div>
+        <!-- 當前打者卡片 -->
+        <div class="matchup-container">
+          <div class="batter-profile">
+            <span class="batter-tag" id="profile-order-tag">第 5 棒 ‧ 次打席</span>
+            <div class="batter-title">
+              <span class="batter-name" id="profile-name">李喆欽</span>
+              <span class="batter-num" id="profile-num">#24</span>
+              <span class="batter-pos" id="profile-pos">3B 三壘</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              面對投手：<span id="profile-pitcher-name">#18 黃思學</span>
+            </div>
+          </div>
+
+          <!-- 壘包狀況小圖 -->
+          <div class="diamond-display">
+            <div class="base-node node-home"></div>
+            <div class="base-node node-1b" id="field-node-1"></div>
+            <div class="base-node node-2b" id="field-node-2"></div>
+            <div class="base-node node-3b" id="field-node-3"></div>
+          </div>
+        </div>
+
+        <!-- 1. 逐球點燈按鈕 (新增擊球進場與界外球選項) -->
+        <div class="card-header" style="margin-bottom: 6px;">
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">逐球追蹤 (可選)</span>
+          <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="clearCount()">重置球數 ↺</span>
+        </div>
+        <div class="pitch-strip">
+          <button class="pitch-key key-ball" onclick="onPitchInput('ball')">壞球 (B)</button>
+          <button class="pitch-key key-strike" onclick="onPitchInput('called_strike')">見好 (S)</button>
+          <button class="pitch-key key-strike" onclick="onPitchInput('swinging_strike')">空振 (S)</button>
+          <button class="pitch-key key-foul" onclick="onPitchInput('foul')" style="background: #fff7ed; border-color: #ffedd5; color: #c2410c;">界外球 (F)</button>
+          <button class="pitch-key" onclick="onPitchInput('put_in_play')" style="background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 800;">擊球進場 (•)</button>
+        </div>
+
+        <!-- 2. 打者擊出 滾地/平飛/高飛 選項 -->
+        <div class="card-header" style="margin-bottom: 6px;">
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">擊球性質 (物理軌跡)</span>
+          <span style="font-size: 0.75rem; color: #0284c7; font-weight: 700;" id="cur-traj-desc">目前：滾地球 (⌒)</span>
+        </div>
+        <div class="traj-selector">
+          <button class="traj-btn active" id="btn-traj-ground" onclick="selectTrajectory('ground')">滾地球 (⌒)</button>
+          <button class="traj-btn" id="btn-traj-line" onclick="selectTrajectory('line')">平飛球 (──)</button>
+          <button class="traj-btn" id="btn-traj-fly" onclick="selectTrajectory('fly')">高飛球 (⁀)</button>
+          <button class="traj-btn" id="btn-traj-none" onclick="selectTrajectory('none')">無軌跡</button>
+        </div>
+
+        <!-- 3. 守備方位1 和 守備方位2 面板 -->
+        <div class="field-dual-box">
+          <div class="field-row-header">
+            <span>守備方位 1 (接球/發起者)</span>
+            <span id="pos1-selected-text" style="color: var(--primary);">6 游擊 (SS)</span>
+          </div>
+          <div class="field-sub-grid" id="pos1-grid">
+            <button class="pos-mini-btn btn-none" id="pos1-btn-none" onclick="selectPos1('none')">無 (四死/K)</button>
+            <button class="pos-mini-btn" onclick="selectPos1(1)">1 投手</button>
+            <button class="pos-mini-btn" onclick="selectPos1(2)">2 捕手</button>
+            <button class="pos-mini-btn" onclick="selectPos1(3)">3 一壘</button>
+            <button class="pos-mini-btn" onclick="selectPos1(4)">4 二壘</button>
+            <button class="pos-mini-btn" onclick="selectPos1(5)">5 三壘</button>
+            <button class="pos-mini-btn active" id="pos1-btn-6" onclick="selectPos1(6)">6 游擊</button>
+            <button class="pos-mini-btn" onclick="selectPos1(7)">7 左外</button>
+            <button class="pos-mini-btn" onclick="selectPos1(8)">8 中外</button>
+            <button class="pos-mini-btn" onclick="selectPos1(9)">9 右外</button>
+          </div>
+
+          <div class="field-row-header" style="margin-top: 6px;">
+            <span>守備方位 2 (傳球/刺殺員，可選無)</span>
+            <span id="pos2-selected-text" style="color: #475569;">無 (直接接殺/自踩)</span>
+          </div>
+          <div class="field-sub-grid" id="pos2-grid">
+            <button class="pos-mini-btn btn-none active" id="pos2-btn-none" onclick="selectPos2('none')">無 (接殺/自踩)</button>
+            <button class="pos-mini-btn" onclick="selectPos2(1)">1 投手</button>
+            <button class="pos-mini-btn" onclick="selectPos2(2)">2 捕手</button>
+            <button class="pos-mini-btn" id="pos2-btn-3" onclick="selectPos2(3)">3 一壘</button>
+            <button class="pos-mini-btn" id="pos2-btn-4" onclick="selectPos2(4)">4 二壘</button>
+            <button class="pos-mini-btn" onclick="selectPos2(5)">5 三壘</button>
+            <button class="pos-mini-btn" onclick="selectPos2(6)">6 游擊</button>
+            <button class="pos-mini-btn" onclick="selectPos2(7)">7 左外</button>
+            <button class="pos-mini-btn" onclick="selectPos2(8)">8 中外</button>
+            <button class="pos-mini-btn" onclick="selectPos2(9)">9 右外</button>
+          </div>
+
+          <!-- 即時合成代碼標籤 -->
+          <div class="code-preview-banner">
+            <span>守備合成標記：</span>
+            <span id="field-code-badge" style="font-size: 0.95rem; font-weight: 800; color: #1e3a8a;">6 (游擊接殺/自踩)</span>
+          </div>
+        </div>
+
+        <!-- 打擊結果大按鍵區 (一鍵開彈窗確認推進) -->
+        <div class="card-header" style="margin-bottom: 6px;">
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">打擊與上壘結果 (點擊速記)</span>
+        </div>
+        <div class="keypad">
+          <!-- 安打 -->
+          <button class="key-btn hit" onclick="openAdvanceModal('1B')">
+            一安 <span class="sub">1B</span>
+          </button>
+          <button class="key-btn hit" onclick="openAdvanceModal('2B')">
+            二安 <span class="sub">2B</span>
+          </button>
+          <button class="key-btn hit" onclick="openAdvanceModal('3B')">
+            三安 <span class="sub">3B</span>
+          </button>
+          <button class="key-btn hit" onclick="openAdvanceModal('HR')">
+            全壘打 <span class="sub">HR</span>
+          </button>
+
+          <!-- 保送與三振 -->
+          <button class="key-btn walk" onclick="openAdvanceModal('BB')">
+            四壞 <span class="sub">BB</span>
+          </button>
+          <button class="key-btn walk" onclick="openAdvanceModal('HBP')">
+            觸身 <span class="sub">HBP</span>
+          </button>
+          <button class="key-btn out" onclick="openAdvanceModal('K')">
+            揮三振 <span class="sub">K</span>
+          </button>
+          <button class="key-btn out" onclick="openAdvanceModal('ꓘ')">
+            見三振 <span class="sub">ꓘ</span>
+          </button>
+
+          <!-- 刺殺與戰術 -->
+          <button class="key-btn out" onclick="openAdvanceModal('GO')">
+            滾地刺 <span class="sub">6-3 / 4-3</span>
+          </button>
+          <button class="key-btn out" onclick="openAdvanceModal('FO')">
+            飛球接 <span class="sub">F7 / F8</span>
+          </button>
+          <button class="key-btn walk" onclick="openAdvanceModal('E')">
+            失誤 <span class="sub">E</span>
+          </button>
+          <button class="key-btn out" onclick="openAdvanceModal('SAC')">
+            犧牲短 <span class="sub">[1-3]</span>
+          </button>
+        </div>
+
+        <!-- 即時逐打席轉播文字 (PBP) -->
+        <div class="card" style="margin-bottom: 10px;">
+          <div class="card-header">
+            <span class="card-title">🎙️ 逐打席中文化賽況轉播 (PBP)</span>
+            <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="copyAllPBP()">複製報導 ⎘</span>
+          </div>
+          <div class="pbp-container" id="pbp-feed-list">
+            <!-- 動態填充賽況文字 -->
+          </div>
+        </div>
+
+        <!-- 底部輔助列 -->
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-act secondary" onclick="openRosterDialog()">👥 代打/代跑</button>
+          <button class="btn-act secondary" onclick="undoAction()">↩ 復原上一步</button>
+          <button class="btn-act primary" onclick="exportGameData()">💾 匯出存檔</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 三振類型選擇彈窗 (Strikeout Modal) -->
+  <div class="modal-backdrop" id="strikeout-dialog" style="display: none;">
+    <div class="modal-box" style="max-width: 360px;">
+      <div class="title">⚾ 累積第 3 個好球 (三振)</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+        守備方位已自動設為「無」，請選擇三振類型：
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn-act secondary" style="padding: 12px; font-size: 0.95rem; text-align: left;" onclick="confirmStrikeoutType('K')">
+          <strong style="color: #1e293b;">揮棒落空三振 (K)</strong>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">打者揮棒落空遭三振出局</div>
+        </button>
+        <button class="btn-act secondary" style="padding: 12px; font-size: 0.95rem; text-align: left;" onclick="confirmStrikeoutType('ꓘ')">
+          <strong style="color: #1e293b;">站著看見振 (ꓘ)</strong>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">打者未揮棒，好球進壘遭見振出局</div>
+        </button>
+        <button class="btn-act secondary" style="padding: 12px; font-size: 0.95rem; text-align: left;" onclick="confirmStrikeoutType('uncaught_k')">
+          <strong style="color: #b91c1c;">不死三振 (Ʞ / 暴投捕逸)</strong>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">捕手漏接或暴投，打者奔往一壘</div>
+        </button>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 14px;">
+        <button class="btn-act secondary" onclick="closeStrikeoutDialog()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 跑者推進與打點確認彈窗 (Runner Advance Modal) -->
+  <div class="modal-backdrop" id="advance-dialog" style="display: none;">
+    <div class="modal-box">
+      <div class="title" id="adv-dialog-title">擊球結果確認</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+        系統已依棒球規則自動推算跑者進壘，請確認：
+      </p>
+
+      <div id="adv-dialog-rows">
+        <!-- JS 動態插入打者與跑者進壘選單 -->
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeAdvanceDialog()">取消</button>
+        <button class="btn-act primary" onclick="commitPlayAndAdvance()">確定並送出 ✔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 台中小海盜 28 人名冊調度彈窗 -->
+  <div class="modal-backdrop" id="roster-dialog" style="display: none;">
+    <div class="modal-box" style="max-height: 85vh; overflow-y: auto;">
+      <div class="title">台中小海盜大叔隊 - 28 人球員名冊</div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+        點擊隊員安排為代打 (PH)、代跑 (PR) 或換投：
+      </p>
+
+      <div id="roster-dialog-list" style="display: flex; flex-direction: column; gap: 6px;">
+        <!-- JS 動態填充 28 人名單 -->
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeRosterDialog()">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入模組 -->
+  <script src="./roster_pirates.js"></script>
+  <script src="./waseda-score-grid.js"></script>
+  <script src="./waseda-examples.js"></script>
+  <script src="./baseball-engine.js"></script>
+
+  <script>
+    // 全域賽事主體物件
+    let currentGame = null;
+    let selectedFieldPos = 8;
+    let pendingPlay = null;
+    let activeScorebookTab = 'away'; // 'away' | 'home'
+
+    // 啟動與初始化
+    window.addEventListener('DOMContentLoaded', () => {
+      initFullGame();
+      refreshDashboard();
+      renderScorebookMatrix();
+      renderPitcherTable();
+      renderPBPFeed();
+      checkBalances();
+    });
+
+    // 初始化比賽 (優先讀取賽前排定名單，若無則載入示範名單)
+    function initFullGame() {
+      const savedSetupStr = localStorage.getItem('baseball_game_setup');
+      if (savedSetupStr) {
+        try {
+          const setup = JSON.parse(savedSetupStr);
+          currentGame = BaseballEngine.createNewGame({
+            title: setup.meta?.title || "2026年台中市棒球聯賽",
+            date: setup.meta?.date,
+            field: setup.meta?.field,
+            umpire: setup.meta?.umpire,
+            scorer: setup.meta?.scorer,
+            awayName: setup.away?.name || "台中小海盜大叔隊",
+            awayLineup: setup.away?.lineup || [],
+            awayPitchers: [{ name: setup.away?.pitcher?.name || "黃思學", number: setup.away?.pitcher?.number || "18", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }],
+            homeName: setup.home?.name || "台中獵犬棒球隊",
+            homeLineup: setup.home?.lineup || [],
+            homePitchers: [{ name: setup.home?.pitcher?.name || "鄭凱文", number: setup.home?.pitcher?.number || "19", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }]
+          });
+
+          // 更新介面上的球隊名稱與標籤
+          document.getElementById('away-name-label').textContent = `${setup.away.name} (客)`;
+          document.getElementById('home-name-label').textContent = `${setup.home.name} (主)`;
+          document.getElementById('btn-tab-away').textContent = `先攻 (${setup.away.name.slice(0, 4)})`;
+          document.getElementById('btn-tab-home').textContent = `後攻 (${setup.home.name.slice(0, 4)})`;
+
+          // 剛剛從賽前頁面送出，是全新比賽，不載入展示打席
+          return;
+        } catch (e) {
+          console.error("載入賽前名單失敗，退回預設示範陣容:", e);
+        }
+      }
+
+      // 依序排列台中小海盜先發 9 人 (預設展示模式)
+      const awayStarters = PIRATES_ROSTER.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder).map((p, idx) => ({
+        ...p,
+        order: idx + 1,
+        pos: p.defaultPos
+      }));
+
+      // 對手球隊先發
+      const homeStarters = [
+        { order: 1, number: "7",  name: "張志豪", pos: "8" },
+        { order: 2, number: "9",  name: "王威晨", pos: "5" },
+        { order: 3, number: "39", name: "詹子賢", pos: "7" },
+        { order: 4, number: "25", name: "許基宏", pos: "3" },
+        { order: 5, number: "90", name: "江坤宇", pos: "6" },
+        { order: 6, number: "4",  name: "陳文杰", pos: "9" },
+        { order: 7, number: "74", name: "許躍騰", pos: "2" },
+        { order: 8, number: "66", name: "黃韋盛", pos: "4" },
+        { order: 9, number: "19", name: "鄭凱文", pos: "1" }
+      ];
+
+      currentGame = BaseballEngine.createNewGame({
+        title: "2026年台中市棒球聯賽",
+        awayName: "台中小海盜大叔隊",
+        awayLineup: awayStarters,
+        awayPitchers: [{ name: "黃思學", number: "18", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }],
+        homeName: "台中獵犬棒球隊",
+        homeLineup: homeStarters,
+        homePitchers: [{ name: "鄭凱文", number: "19", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }]
+      });
+
+      // 預設填入前 4 個打席（展示 3:0 領先成果）
+      loadInitialShowcasePlays();
+    }
+
+    function loadInitialShowcasePlays() {
+      // 1棒 簡亦汛 BB
+      BaseballEngine.recordPlay(currentGame, {
+        resultType: 'BB',
+        advances: { batter: '1B' }
+      });
+      // 2棒 高新策 犧牲短打 [1-3]
+      BaseballEngine.recordPlay(currentGame, {
+        resultType: 'SAC',
+        fieldCode: '1-3',
+        advances: { batter: 'OUT', runners: { 1: 'ADV_2' } }
+      });
+      // 3棒 譚翔 1B 中外平飛安打 1分打點
+      BaseballEngine.recordPlay(currentGame, {
+        resultType: '1B',
+        direction: 8,
+        trajectory: 'line',
+        fieldCode: '1B 8',
+        advances: { batter: '1B', runners: { 2: 'SCORE' } }
+      });
+      // 4棒 楊敏達 HR 兩分砲
+      BaseballEngine.recordPlay(currentGame, {
+        resultType: 'HR',
+        direction: 7,
+        trajectory: 'fly',
+        fieldCode: 'HR 7',
+        advances: { batter: 'HR', runners: { 1: 'SCORE' } }
+      });
+    }
+
+    // 切換裝置模式 (iPad vs 手機)
+    function setDeviceView(mode) {
+      const container = document.getElementById('main-container');
+      const btnIpad = document.getElementById('btn-view-ipad');
+      const btnMobile = document.getElementById('btn-view-mobile');
+
+      if (mode === 'mobile') {
+        container.classList.add('mode-mobile');
+        btnMobile.classList.add('active');
+        btnIpad.classList.remove('active');
+      } else {
+        container.classList.remove('mode-mobile');
+        btnIpad.classList.add('active');
+        btnMobile.classList.remove('active');
+      }
+    }
+
+    // 切換紙本標籤頁 (先攻 / 後攻)
+    function switchScorebookTab(tab) {
+      activeScorebookTab = tab;
+      document.getElementById('btn-tab-away').classList.toggle('active', tab === 'away');
+      document.getElementById('btn-tab-home').classList.toggle('active', tab === 'home');
+      renderScorebookMatrix();
+      checkBalances();
+    }
+
+    // 當前選擇狀態：擊球性質與雙守備方位
+    let selectedTrajectory = 'ground'; // 'ground' | 'line' | 'fly' | 'none'
+    let selectedPos1 = 6;              // 守備方位 1 (預設 6 游擊)
+    let selectedPos2 = 'none';         // 守備方位 2 (預設 'none'，可為 1~9)
+
+    // 切換擊球性質 (物理軌跡)
+    function selectTrajectory(traj) {
+      selectedTrajectory = traj;
+      document.querySelectorAll('.traj-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`btn-traj-${traj}`);
+      if (btn) btn.classList.add('active');
+
+      const labels = {
+        ground: '滾地球 (⌒)',
+        line: '平飛球 (──)',
+        fly: '高飛球 (⁀)',
+        none: '無軌跡'
+      };
+      document.getElementById('cur-traj-desc').textContent = `目前：${labels[traj] || traj}`;
+    }
+
+    // 選擇守備方位 1 (支援選無)
+    function selectPos1(pos) {
+      selectedPos1 = pos;
+      document.querySelectorAll('#pos1-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
+      if (pos === 'none') {
+        const btnNone = document.getElementById('pos1-btn-none');
+        if (btnNone) btnNone.classList.add('active');
+        document.getElementById('pos1-selected-text').textContent = '無 (四死球/三振)';
+      } else {
+        const btn = document.getElementById(`pos1-btn-${pos}`) || event?.target;
+        if (btn && btn.classList) btn.classList.add('active');
+        document.getElementById('pos1-selected-text').textContent = `${pos} ${getPosChinese(String(pos))}`;
+      }
+      updateFieldCodeDisplay();
+    }
+
+    // 選擇守備方位 2 (可選無)
+    function selectPos2(pos) {
+      selectedPos2 = pos;
+      document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
+      if (pos === 'none') {
+        const btnNone = document.getElementById('pos2-btn-none');
+        if (btnNone) btnNone.classList.add('active');
+        document.getElementById('pos2-selected-text').textContent = '無 (直接接殺/自踩)';
+      } else {
+        const btn = document.getElementById(`pos2-btn-${pos}`) || event?.target;
+        if (btn && btn.classList) btn.classList.add('active');
+        document.getElementById('pos2-selected-text').textContent = `${pos} ${getPosChinese(String(pos))}`;
+      }
+      updateFieldCodeDisplay();
+    }
+
+    // 即時計算合成守備代碼 (例如 6-4, 6-3, 8 等)
+    function getSynthesizedFieldCode(resultType) {
+      const p1 = selectedPos1;
+      const p2 = selectedPos2;
+
+      if (p1 === 'none' && p2 === 'none') {
+        return resultType;
+      }
+
+      if (p2 === 'none') {
+        if (resultType === 'FO') return `F${p1}`;
+        if (resultType === '1B' || resultType === '2B' || resultType === '3B') return `${resultType} ${p1}`;
+        if (resultType === 'E') return `E${p1}`;
+        return `${p1}`;
+      } else {
+        // 雙守備方位協同 (如 6-4 封殺, 6-3 刺殺)
+        if (resultType === 'E') return `${p1}E-${p2}`;
+        return `${p1}-${p2}`;
+      }
+    }
+
+    function updateFieldCodeDisplay() {
+      const p1 = selectedPos1;
+      const p2 = selectedPos2;
+      const badge = document.getElementById('field-code-badge');
+      if (p1 === 'none' && p2 === 'none') {
+        badge.textContent = `無 (非守備打擊：四壞/三振)`;
+      } else if (p2 === 'none') {
+        badge.textContent = `${p1} (${getPosChinese(String(p1))} 接殺/自踩/直接處理)`;
+      } else {
+        badge.textContent = `${p1}-${p2} (${getPosChinese(String(p1))} 接球傳 ${getPosChinese(String(p2))})`;
+      }
+    }
+
+    // 逐球點燈 (新增擊球進場、第4壞球自動BB、第3好球自動彈出三振選擇)
+    function onPitchInput(type) {
+      const s = currentGame.status;
+      s.currentPitches.push(type);
+
+      if (type === 'put_in_play') {
+        // 擊球進場 (•)：球數記錄，等待記錄員點選擊球性質與打擊結果
+        refreshDashboard();
+        return;
+      }
+
+      if (type === 'ball') {
+        s.balls++;
+        if (s.balls >= 4) {
+          // 第 4 個壞球：方位1與2自動設為「無」，打擊結果自動為四壞 BB！
+          selectPos1('none');
+          selectPos2('none');
+          openAdvanceModal('BB');
+          return;
+        }
+      } else if (type === 'called_strike' || type === 'swinging_strike') {
+        s.strikes++;
+        if (s.strikes >= 3) {
+          // 第 3 個好球：方位1與2自動設為「無」，跳出三振選項彈窗！
+          selectPos1('none');
+          selectPos2('none');
+          openStrikeoutDialog();
+          return;
+        }
+      } else if (type === 'foul') {
+        // 界外球：兩好球前計一好球；兩好球後維持兩好球
+        if (s.strikes < 2) {
+          s.strikes++;
+        }
+      } else if (type === 'bunt_foul') {
+        // 短打界外：兩好球後短打界外判定三振出局！
+        if (s.strikes >= 2) {
+          alert("兩好球後觸擊短打出界，判定三振出局！");
+          selectPos1('none');
+          selectPos2('none');
+          openAdvanceModal('K');
+          return;
+        } else {
+          s.strikes++;
+        }
+      }
+      refreshDashboard();
+    }
+
+    // 三振類型選擇彈窗控制
+    function openStrikeoutDialog() {
+      document.getElementById('strikeout-dialog').style.display = 'flex';
+    }
+
+    function closeStrikeoutDialog() {
+      document.getElementById('strikeout-dialog').style.display = 'none';
+    }
+
+    function confirmStrikeoutType(type) {
+      closeStrikeoutDialog();
+      if (type === 'uncaught_k') {
+        // 不死三振：打者安全上一壘，傳正確 resultType='Ʞ' 給引擎
+        openAdvanceModal('Ʞ');
+      } else {
+        openAdvanceModal(type); // 'K' 或 'ꓘ'
+      }
+    }
+
+    function clearCount() {
+      currentGame.status.balls = 0;
+      currentGame.status.strikes = 0;
+      currentGame.status.currentPitches = [];
+      refreshDashboard();
+    }
+
+    // 開啟跑者推進彈窗
+    function openAdvanceModal(resultType) {
+      const s = currentGame.status;
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
+
+      // 若點擊滾地出局但方位2為無，智慧預設為一壘刺殺 (例如 6-3)
+      if (resultType === 'GO' && selectedPos2 === 'none' && selectedPos1 !== 3) {
+        selectedPos2 = 3;
+        updateFieldCodeDisplay();
+        // 更新方位2按鈕亮燈
+        document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
+        const btn3 = document.getElementById('pos2-btn-3');
+        if (btn3) btn3.classList.add('active');
+        document.getElementById('pos2-selected-text').textContent = '3 一壘 (1B)';
+      }
+
+      // 若點擊飛球接殺，自動將方位2設為無
+      if (resultType === 'FO') {
+        selectedPos2 = 'none';
+        selectedTrajectory = 'fly';
+        selectTrajectory('fly');
+        updateFieldCodeDisplay();
+        document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
+        const btnNone = document.getElementById('pos2-btn-none');
+        if (btnNone) btnNone.classList.add('active');
+        document.getElementById('pos2-selected-text').textContent = '無 (直接接殺/自踩)';
+      }
+
+      // 計算合成守備代碼
+      const fieldCode = getSynthesizedFieldCode(resultType);
+
+      // 呼叫智慧推進推算
+      const defaultAdv = BaseballEngine.inferAdvancement(s.bases, resultType, resultType === 'BB' || resultType === 'HBP');
+
+      pendingPlay = {
+        resultType,
+        direction: selectedPos1,
+        trajectory: selectedTrajectory !== 'none' ? selectedTrajectory : undefined,
+        fieldCode: fieldCode
+      };
+
+      document.getElementById('adv-dialog-title').textContent = `${batter.name} (#${batter.number}) ─ ${resultType} [${fieldCode}]`;
+      const container = document.getElementById('adv-dialog-rows');
+
+      let rowsHtml = `
+        <div class="runner-row">
+          <span>打者 (${batter.name})：</span>
+          <select class="select-input" id="adv-select-batter">
+            <option value="1B" ${defaultAdv.batter === '1B' ? 'selected' : ''}>進佔一壘</option>
+            <option value="2B" ${defaultAdv.batter === '2B' ? 'selected' : ''}>進佔二壘</option>
+            <option value="3B" ${defaultAdv.batter === '3B' ? 'selected' : ''}>進佔三壘</option>
+            <option value="HR" ${defaultAdv.batter === 'HR' ? 'selected' : ''}>回本壘得分 (HR)</option>
+            <option value="OUT" ${defaultAdv.batter === 'OUT' ? 'selected' : ''}>出局</option>
+          </select>
+        </div>
+      `;
+
+      [3, 2, 1].forEach(b => {
+        const runner = s.bases[b];
+        if (runner) {
+          const defAct = defaultAdv.runners[b] || 'STAY';
+          rowsHtml += `
+            <div class="runner-row">
+              <span>${b}壘跑者 (${runner.player.name})：</span>
+              <select class="select-input" id="adv-select-runner-${b}">
+                <option value="STAY" ${defAct === 'STAY' ? 'selected' : ''}>留原壘</option>
+                <option value="ADV_2" ${defAct === 'ADV_2' ? 'selected' : ''}>推進二壘</option>
+                <option value="ADV_3" ${defAct === 'ADV_3' ? 'selected' : ''}>推進三壘</option>
+                <option value="SCORE" ${defAct === 'SCORE' ? 'selected' : ''}>跑回本壘得分</option>
+                <option value="OUT" ${defAct === 'OUT' ? 'selected' : ''}>阻殺出局</option>
+              </select>
+            </div>
+          `;
+        }
+      });
+
+      container.innerHTML = rowsHtml;
+      document.getElementById('advance-dialog').style.display = 'flex';
+    }
+
+    function closeAdvanceDialog() {
+      document.getElementById('advance-dialog').style.display = 'none';
+      pendingPlay = null;
+    }
+
+    // 確定記錄並更新整場狀態
+    function commitPlayAndAdvance() {
+      if (!pendingPlay) return;
+
+      const batterAdv = document.getElementById('adv-select-batter').value;
+      const runnersAdv = {};
+      [1, 2, 3].forEach(b => {
+        const el = document.getElementById(`adv-select-runner-${b}`);
+        if (el) runnersAdv[b] = el.value;
+      });
+
+      pendingPlay.advances = {
+        batter: batterAdv,
+        runners: runnersAdv
+      };
+
+      // 呼叫引擎執行核心狀態機
+      const playRes = BaseballEngine.recordPlay(currentGame, pendingPlay);
+
+      // 若發生 3 出局攻守交換，自動切換至新進攻方紙本標籤頁！
+      if (playRes && playRes.inningChanged) {
+        activeScorebookTab = currentGame.status.isTop ? 'away' : 'home';
+        document.getElementById('btn-tab-away').classList.toggle('active', activeScorebookTab === 'away');
+        document.getElementById('btn-tab-home').classList.toggle('active', activeScorebookTab === 'home');
+      }
+
+      closeAdvanceDialog();
+      refreshDashboard();
+      renderScorebookMatrix();
+      renderPitcherTable();
+      renderPBPFeed();
+      checkBalances();
+    }
+
+    // 刷新儀表板 (Scoreboard, Matchup, Bases)
+    function refreshDashboard() {
+      const s = currentGame.status;
+
+      // 比分
+      document.getElementById('score-away-text').textContent = s.scoreAway;
+      document.getElementById('score-home-text').textContent = s.scoreHome;
+      document.getElementById('inning-status-text').textContent = `${s.isTop ? '▲' : '▼'} ${s.inning} 局 ${s.isTop ? '上' : '下'}`;
+      document.getElementById('batting-team-sub').textContent = `${s.isTop ? currentGame.teams.away.name : currentGame.teams.home.name} 進攻`;
+
+      // 球數燈
+      for (let i = 1; i <= 3; i++) document.getElementById(`lamp-b${i}`).classList.toggle('active', s.balls >= i);
+      for (let i = 1; i <= 2; i++) document.getElementById(`lamp-s${i}`).classList.toggle('active', s.strikes >= i);
+      for (let i = 1; i <= 2; i++) document.getElementById(`lamp-o${i}`).classList.toggle('active', s.outs >= i);
+
+      // 當前打者卡片
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
+      if (batter) {
+        document.getElementById('profile-order-tag').textContent = `第 ${batter.order} 棒 ‧ ${s.isTop ? '客隊' : '主隊'}`;
+        document.getElementById('profile-name').textContent = batter.name;
+        document.getElementById('profile-num').textContent = `#${batter.number}`;
+        document.getElementById('profile-pos').textContent = getPosChinese(batter.pos);
+      }
+
+      // 壘包亮燈
+      document.getElementById('field-node-1').classList.toggle('occupied', !!s.bases[1]);
+      document.getElementById('field-node-2').classList.toggle('occupied', !!s.bases[2]);
+      document.getElementById('field-node-3').classList.toggle('occupied', !!s.bases[3]);
+    }
+
+    // 渲染早稻田數位紙本 9×9 矩陣 (包含個人成績統計)
+    function renderScorebookMatrix() {
+      const teamKey = activeScorebookTab;
+      const team = currentGame.teams[teamKey];
+      const matrix = currentGame.scoreMatrix[teamKey] || {};
+      const tbody = document.getElementById('matrix-tbody');
+
+      let html = '';
+
+      team.lineup.forEach((player, pIdx) => {
+        let cellsHtml = '';
+        let pPA = 0, pAB = 0, pH = 0, pR = 0, pRBI = 0, pBB = 0;
+
+        // 渲染 1~7 局
+        for (let inn = 1; inn <= 7; inn++) {
+          const cell = matrix[pIdx] && matrix[pIdx][inn];
+          if (cell) {
+            pPA++;
+            const svg = WasedaScoreGrid.renderSVG(cell, { size: 90 });
+            cellsHtml += `<td>${svg}</td>`;
+
+            const nots = cell.notations || {};
+            const first = nots.first ? nots.first.text : '';
+            const isSac = nots.first && nots.first.isSacrifice;
+            if (cell.center && cell.center.isRun) pR++;
+            if (first.includes('BB') || first.includes('HBP')) pBB++;
+            else if (!isSac) pAB++;
+            if (first.includes('1B') || first.includes('2B') || first.includes('3B') || first.includes('HR')) pH++;
+            if (nots.home && nots.home.rbi) pRBI += nots.home.rbi;
+          } else {
+            cellsHtml += `<td style="color: #cbd5e1; font-size: 0.75rem;">—</td>`;
+          }
+        }
+
+        html += `
+          <tr>
+            <td style="font-weight: 800; background: #f8fafc;">${player.order}</td>
+            <td style="font-weight: 700; font-size: 0.8rem;">${player.pos}</td>
+            <td class="player-title-col">
+              <div class="name">${player.name}</div>
+              <div class="meta">#${player.number} ‧ ${getPosChinese(player.pos)}</div>
+            </td>
+            ${cellsHtml}
+            <td class="stat-num">${pPA}</td>
+            <td class="stat-num">${pAB}</td>
+            <td class="stat-num" style="color: var(--primary);">${pH}</td>
+            <td class="stat-num" style="color: var(--accent-red);">${pR}</td>
+            <td class="stat-num">${pRBI}</td>
+            <td class="stat-num">${pBB}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+
+      // 渲染局底得分 tfoot
+      const tfoot = document.getElementById('matrix-tfoot');
+      const line = (teamKey === 'away') ? currentGame.lineScore.away : currentGame.lineScore.home;
+      let innScoreHtml = '';
+      for (let inn = 1; inn <= 7; inn++) {
+        const r = line.innings[inn - 1] !== undefined ? line.innings[inn - 1] : '—';
+        innScoreHtml += `<th style="background: #f8fafc; font-size: 0.85rem;">${r}</th>`;
+      }
+      tfoot.innerHTML = `
+        <tr>
+          <th colspan="3" style="text-align: right; padding-right: 8px;">各局得分合計 (R)</th>
+          ${innScoreHtml}
+          <th colspan="6" style="background: #e2e8f0; font-size: 0.85rem;">總計: ${line.runs}分 / ${line.hits}安</th>
+        </tr>
+      `;
+    }
+
+    // 渲染投手數據表
+    function renderPitcherTable() {
+      const tbody = document.getElementById('pitcher-tbody');
+      const pitcherAway = currentGame.teams.away.pitchers[0];
+      const pitcherHome = currentGame.teams.home.pitchers[0];
+
+      tbody.innerHTML = `
+        <tr>
+          <td style="font-weight: 700;">#${pitcherAway.number} ${pitcherAway.name} (小海盜)</td>
+          <td>勝</td>
+          <td>1.0</td>
+          <td>14</td>
+          <td>4</td>
+          <td>1</td>
+          <td>0</td>
+          <td>1</td>
+          <td>0</td>
+          <td>1</td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 700;">#${pitcherHome.number} ${pitcherHome.name} (獵犬隊)</td>
+          <td>敗</td>
+          <td>1.0</td>
+          <td>22</td>
+          <td>5</td>
+          <td>2</td>
+          <td>1</td>
+          <td>0</td>
+          <td>1</td>
+          <td>3</td>
+          <td>3</td>
+        </tr>
+      `;
+    }
+
+    // 渲染文字轉播
+    function renderPBPFeed() {
+      const container = document.getElementById('pbp-feed-list');
+      container.innerHTML = currentGame.pbpEvents.map(e => `
+        <div class="pbp-card">
+          <span class="time">●</span> ${e.text}
+        </div>
+      `).join('');
+    }
+
+    // 執行早稻田平衡檢核
+    function checkBalances() {
+      const check = BaseballEngine.checkGameBalance(currentGame, activeScorebookTab);
+      const b1 = document.getElementById('balance-badge-1');
+      const b2 = document.getElementById('balance-badge-2');
+
+      if (check.formula1.isBalanced) {
+        b1.innerHTML = `✔ 打席平衡：PA(${check.totalPA}) = AB(${check.totalAB}) + BB(${check.totalBB}) + HBP(${check.totalHBP}) + SH(${check.totalSH}) + SF(${check.totalSF}) (帳目一致)`;
+        b1.style.color = 'var(--accent-green)';
+      } else {
+        b1.innerHTML = `⚠ 打席不平衡：PA(${check.totalPA}) ≠ 等式(${check.formula1.sum})`;
+        b1.style.color = 'var(--accent-red)';
+      }
+
+      if (check.formula2.isBalanced) {
+        b2.innerHTML = `✔ 局況平衡：PA(${check.totalPA}) = 得分(${check.totalR}) + 殘壘(${check.formula2.lobs}) + 出局(${check.formula2.po}) (帳目一致)`;
+        b2.style.color = 'var(--accent-green)';
+      } else {
+        b2.innerHTML = `⚠ 局況不平衡：PA(${check.totalPA}) ≠ 等式(${check.formula2.sum})`;
+        b2.style.color = 'var(--accent-red)';
+      }
+    }
+
+    function switchHalfInningManually() {
+      if (confirm("是否手動切換攻守半局？")) {
+        currentGame.status.isTop = !currentGame.status.isTop;
+        if (currentGame.status.isTop) currentGame.status.inning++;
+        currentGame.status.outs = 0;
+        currentGame.status.bases = { 1: null, 2: null, 3: null };
+        clearCount();
+        refreshDashboard();
+      }
+    }
+
+    function undoAction() {
+      if (BaseballEngine.undoLastAction(currentGame)) {
+        refreshDashboard();
+        renderScorebookMatrix();
+        renderPitcherTable();
+        renderPBPFeed();
+        checkBalances();
+        alert("已成功復原上一個打席！");
+      } else {
+        alert("沒有更早的歷史步驟可復原。");
+      }
+    }
+
+    function copyAllPBP() {
+      const text = currentGame.pbpEvents.map(e => e.text).reverse().join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        alert("已成功複製全場逐打席報導！");
+      });
+    }
+
+    function exportGameData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentGame, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `baseball_record_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function openPrintView() {
+      window.print();
+    }
+
+    // 28人名單調度視窗
+    function openRosterDialog() {
+      const dialog = document.getElementById('roster-dialog');
+      const list = document.getElementById('roster-dialog-list');
+      const starters = currentGame.teams.away.lineup;
+
+      list.innerHTML = PIRATES_ROSTER.map(p => {
+        const isStarter = starters.some(s => s.id === p.id);
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: ${isStarter ? '#eff6ff' : '#f8fafc'}; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div>
+              <span style="font-weight: 800; margin-right: 6px;">#${p.number}</span>
+              <span style="font-weight: 700;">${p.name}</span>
+              <span style="font-size: 0.75rem; color: #64748b; margin-left: 6px;">${isStarter ? '(先發名單中)' : '(板凳)'}</span>
+            </div>
+            <div>
+              <button class="tool-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="substituteBatter('${p.name}', '${p.number}')">
+                派為代打 (PH)
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      dialog.style.display = 'flex';
+    }
+
+    function closeRosterDialog() {
+      document.getElementById('roster-dialog').style.display = 'none';
+    }
+
+    function substituteBatter(name, number) {
+      const s = currentGame.status;
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      currentGame.teams.away.lineup[orderIdx].name = name;
+      currentGame.teams.away.lineup[orderIdx].number = number;
+      closeRosterDialog();
+      refreshDashboard();
+      renderScorebookMatrix();
+      alert(`已將第 ${orderIdx + 1} 棒更換為代打 #${number} ${name}！`);
+    }
+
+    function getPosChinese(pos) {
+      const map = {
+        '1': '投手 P', '2': '捕手 C', '3': '一壘 1B', '4': '二壘 2B',
+        '5': '三壘 3B', '6': '游擊 SS', '7': '左外 LF', '8': '中外 CF', '9': '右外 RF',
+        'DH': '指打 DH', 'BN': '板凳 BN'
+      };
+      return map[pos] || pos;
+    }
+  </script>
+</body>
+</html>
