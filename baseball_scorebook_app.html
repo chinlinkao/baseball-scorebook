@@ -433,7 +433,6 @@
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 4px;
-      margin-bottom: 10px;
       width: 100%;
     }
 
@@ -461,30 +460,10 @@
       box-shadow: 0 0 6px rgba(2, 132, 199, 0.4);
     }
 
-    .field-dual-box {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 8px 6px;
-      margin-bottom: 10px;
-      width: 100%;
-    }
-
-    .field-row-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 5px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-    }
-
     .field-sub-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 3px;
-      margin-bottom: 6px;
       width: 100%;
     }
 
@@ -520,19 +499,6 @@
       background: #475569;
       color: white;
       border-color: #475569;
-    }
-
-    .code-preview-banner {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #1e40af;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .table-scroll-wrap {
@@ -659,7 +625,9 @@
       background: white;
       border-radius: 16px;
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
       padding: 20px;
       box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);
     }
@@ -956,64 +924,9 @@
           <button class="pitch-key" onclick="onPitchInput('put_in_play')" style="background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 800;">擊球進場</button>
         </div>
 
-        <!-- 2. 打者擊出 滾地/平飛/高飛 選項 -->
+        <!-- 2. 打擊與上壘結果大按鍵區 (點選後展開下一級細項選擇) -->
         <div class="card-header" style="margin-bottom: 6px;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">擊球性質 (物理軌跡)</span>
-          <span style="font-size: 0.75rem; color: #0284c7; font-weight: 700;" id="cur-traj-desc">目前：滾地球 (⌒)</span>
-        </div>
-        <div class="traj-selector">
-          <button class="traj-btn active" id="btn-traj-ground" onclick="selectTrajectory('ground')">滾地球 (⌒)</button>
-          <button class="traj-btn" id="btn-traj-line" onclick="selectTrajectory('line')">平飛球 (──)</button>
-          <button class="traj-btn" id="btn-traj-fly" onclick="selectTrajectory('fly')">高飛球 (⁀)</button>
-          <button class="traj-btn" id="btn-traj-none" onclick="selectTrajectory('none')">無軌跡</button>
-        </div>
-
-        <!-- 3. 守備方位1 和 守備方位2 面板 -->
-        <div class="field-dual-box">
-          <div class="field-row-header">
-            <span>守備方位 1 (接球/發起者)</span>
-            <span id="pos1-selected-text" style="color: var(--primary);">6 游擊 (SS)</span>
-          </div>
-          <div class="field-sub-grid" id="pos1-grid">
-            <button class="pos-mini-btn btn-none" id="pos1-btn-none" onclick="selectPos1('none')">無 (四死/K)</button>
-            <button class="pos-mini-btn" onclick="selectPos1(1)">1 投手</button>
-            <button class="pos-mini-btn" onclick="selectPos1(2)">2 捕手</button>
-            <button class="pos-mini-btn" onclick="selectPos1(3)">3 一壘</button>
-            <button class="pos-mini-btn" onclick="selectPos1(4)">4 二壘</button>
-            <button class="pos-mini-btn" onclick="selectPos1(5)">5 三壘</button>
-            <button class="pos-mini-btn active" id="pos1-btn-6" onclick="selectPos1(6)">6 游擊</button>
-            <button class="pos-mini-btn" onclick="selectPos1(7)">7 左外</button>
-            <button class="pos-mini-btn" onclick="selectPos1(8)">8 中外</button>
-            <button class="pos-mini-btn" onclick="selectPos1(9)">9 右外</button>
-          </div>
-
-          <div class="field-row-header" style="margin-top: 6px;">
-            <span>守備方位 2 (傳球/刺殺員，可選無)</span>
-            <span id="pos2-selected-text" style="color: #475569;">無 (直接接殺/自踩)</span>
-          </div>
-          <div class="field-sub-grid" id="pos2-grid">
-            <button class="pos-mini-btn btn-none active" id="pos2-btn-none" onclick="selectPos2('none')">無 (接殺/自踩)</button>
-            <button class="pos-mini-btn" onclick="selectPos2(1)">1 投手</button>
-            <button class="pos-mini-btn" onclick="selectPos2(2)">2 捕手</button>
-            <button class="pos-mini-btn" id="pos2-btn-3" onclick="selectPos2(3)">3 一壘</button>
-            <button class="pos-mini-btn" id="pos2-btn-4" onclick="selectPos2(4)">4 二壘</button>
-            <button class="pos-mini-btn" onclick="selectPos2(5)">5 三壘</button>
-            <button class="pos-mini-btn" onclick="selectPos2(6)">6 游擊</button>
-            <button class="pos-mini-btn" onclick="selectPos2(7)">7 左外</button>
-            <button class="pos-mini-btn" onclick="selectPos2(8)">8 中外</button>
-            <button class="pos-mini-btn" onclick="selectPos2(9)">9 右外</button>
-          </div>
-
-          <!-- 即時合成代碼標籤 -->
-          <div class="code-preview-banner">
-            <span>守備合成標記：</span>
-            <span id="field-code-badge" style="font-size: 0.95rem; font-weight: 800; color: #1e3a8a;">6 (游擊接殺/自踩)</span>
-          </div>
-        </div>
-
-        <!-- 打擊結果大按鍵區 -->
-        <div class="card-header" style="margin-bottom: 6px;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">打擊與上壘結果 (點擊速記)</span>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">打擊與上壘結果 (點擊展開下一級選項)</span>
         </div>
         <div class="keypad">
           <button class="key-btn hit" onclick="openAdvanceModal('1B')">
@@ -1147,7 +1060,7 @@
     <div class="modal-box" style="max-width: 360px;">
       <div class="title">⚾ 累積第 3 個好球 (三振)</div>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-        守備方位已自動設為「無」，請選擇三振類型：
+        請選擇三振類型：
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -1171,15 +1084,72 @@
     </div>
   </div>
 
-  <!-- 跑者推進與打點確認彈窗 -->
+  <!-- 擊球結果與下一級選項（擊球性質、守備方位1、守備方位2）與進壘確認彈窗 -->
   <div class="modal-backdrop" id="advance-dialog" style="display: none;">
     <div class="modal-box">
-      <div class="title" id="adv-dialog-title">擊球結果確認</div>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-        系統已依棒球規則自動推算跑者進壘，請確認：
-      </p>
+      <div class="title" id="adv-dialog-title" style="border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 10px;">
+        擊球結果細項與進壘確認
+      </div>
 
-      <div id="adv-dialog-rows">
+      <!-- 下一級選項 1：擊球性質 (物理軌跡) -->
+      <div id="group-trajectory" style="margin-bottom: 10px;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">
+          1. 擊球性質 (物理軌跡)
+        </div>
+        <div class="traj-selector">
+          <button class="traj-btn" id="modal-traj-ground" onclick="setModalTraj('ground')">滾地 (⌒)</button>
+          <button class="traj-btn" id="modal-traj-line" onclick="setModalTraj('line')">平飛 (──)</button>
+          <button class="traj-btn" id="modal-traj-fly" onclick="setModalTraj('fly')">高飛 (⁀)</button>
+          <button class="traj-btn" id="modal-traj-none" onclick="setModalTraj('none')">無軌跡</button>
+        </div>
+      </div>
+
+      <!-- 下一級選項 2：守備方位 1 & 守備方位 2 -->
+      <div id="group-fielding" style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 10px;">
+        <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">
+          2. 守備方位 1 (落點 / 接球員)
+        </div>
+        <div class="field-sub-grid" id="modal-pos1-grid" style="margin-bottom: 8px;">
+          <button class="pos-mini-btn btn-none" id="modal-pos1-none" onclick="setModalPos1('none')">無</button>
+          <button class="pos-mini-btn" id="modal-pos1-1" onclick="setModalPos1(1)">1 投手</button>
+          <button class="pos-mini-btn" id="modal-pos1-2" onclick="setModalPos1(2)">2 捕手</button>
+          <button class="pos-mini-btn" id="modal-pos1-3" onclick="setModalPos1(3)">3 一壘</button>
+          <button class="pos-mini-btn" id="modal-pos1-4" onclick="setModalPos1(4)">4 二壘</button>
+          <button class="pos-mini-btn" id="modal-pos1-5" onclick="setModalPos1(5)">5 三壘</button>
+          <button class="pos-mini-btn" id="modal-pos1-6" onclick="setModalPos1(6)">6 游擊</button>
+          <button class="pos-mini-btn" id="modal-pos1-7" onclick="setModalPos1(7)">7 左外</button>
+          <button class="pos-mini-btn" id="modal-pos1-8" onclick="setModalPos1(8)">8 中外</button>
+          <button class="pos-mini-btn" id="modal-pos1-9" onclick="setModalPos1(9)">9 右外</button>
+        </div>
+
+        <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">
+          3. 守備方位 2 (轉傳 / 刺殺員)
+        </div>
+        <div class="field-sub-grid" id="modal-pos2-grid">
+          <button class="pos-mini-btn btn-none" id="modal-pos2-none" onclick="setModalPos2('none')">無</button>
+          <button class="pos-mini-btn" id="modal-pos2-1" onclick="setModalPos2(1)">1 投手</button>
+          <button class="pos-mini-btn" id="modal-pos2-2" onclick="setModalPos2(2)">2 捕手</button>
+          <button class="pos-mini-btn" id="modal-pos2-3" onclick="setModalPos2(3)">3 一壘</button>
+          <button class="pos-mini-btn" id="modal-pos2-4" onclick="setModalPos2(4)">4 二壘</button>
+          <button class="pos-mini-btn" id="modal-pos2-5" onclick="setModalPos2(5)">5 三壘</button>
+          <button class="pos-mini-btn" id="modal-pos2-6" onclick="setModalPos2(6)">6 游擊</button>
+          <button class="pos-mini-btn" id="modal-pos2-7" onclick="setModalPos2(7)">7 左外</button>
+          <button class="pos-mini-btn" id="modal-pos2-8" onclick="setModalPos2(8)">8 中外</button>
+          <button class="pos-mini-btn" id="modal-pos2-9" onclick="setModalPos2(9)">9 右外</button>
+        </div>
+      </div>
+
+      <!-- 即時守備代碼預覽標籤 -->
+      <div style="margin-bottom: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: #1e40af; display: flex; justify-content: space-between; align-items: center;">
+        <span>合成守備代碼：</span>
+        <span id="modal-field-code-badge" style="font-size: 0.92rem; font-weight: 800; color: #1e3a8a;">6-3 (游擊滾地刺殺一壘)</span>
+      </div>
+
+      <!-- 打者與跑者進壘選項 -->
+      <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+        4. 打者與跑者處置處
+      </div>
+      <div id="adv-dialog-rows" style="margin-bottom: 12px;">
         <!-- JS 動態插入 -->
       </div>
 
@@ -1216,10 +1186,15 @@
 
   <script>
     let currentGame = null;
-    let selectedFieldPos = 8;
     let pendingPlay = null;
     let activeScorebookTab = 'away';
     let historySnapshots = [];
+
+    // 下一級選單狀態變數
+    let currentResultType = '1B';
+    let modalTraj = 'ground';
+    let modalPos1 = 6;
+    let modalPos2 = 3;
 
     window.addEventListener('DOMContentLoaded', () => {
       initFullGame();
@@ -1277,7 +1252,6 @@
         homePitchers: [{ name: "鄭凱文", number: "19" }]
       });
 
-      // 初始化打序 Slot（支援同棒次新增代打列）
       currentGame.teams.away.orderSlots = awayStarters.map((p, idx) => [{
         ...p,
         order: idx + 1,
@@ -1294,7 +1268,6 @@
       }]);
       currentGame.teams.home.lineup = currentGame.teams.home.orderSlots.map(slot => slot[0]);
 
-      // 初始化增強型打席矩陣（支援單局多打席陣列）
       currentGame.enhancedMatrix = { away: {}, home: {} };
     }
 
@@ -1369,85 +1342,71 @@
       checkBalances();
     }
 
-    let selectedTrajectory = 'ground';
-    let selectedPos1 = 6;
-    let selectedPos2 = 'none';
-
-    function selectTrajectory(traj) {
-      selectedTrajectory = traj;
-      document.querySelectorAll('.traj-btn').forEach(b => b.classList.remove('active'));
-      const btn = document.getElementById(`btn-traj-${traj}`);
+    // Modal 內部下一級選項控制
+    function setModalTraj(traj) {
+      modalTraj = traj;
+      document.querySelectorAll('#group-trajectory .traj-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`modal-traj-${traj}`);
       if (btn) btn.classList.add('active');
-
-      const labels = {
-        ground: '滾地球 (⌒)',
-        line: '平飛球 (──)',
-        fly: '高飛球 (⁀)',
-        none: '無軌跡'
-      };
-      document.getElementById('cur-traj-desc').textContent = `目前：${labels[traj] || traj}`;
+      updateModalFieldCode();
     }
 
-    function selectPos1(pos) {
-      selectedPos1 = pos;
-      document.querySelectorAll('#pos1-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
+    function setModalPos1(pos) {
+      modalPos1 = pos;
+      document.querySelectorAll('#modal-pos1-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
       if (pos === 'none') {
-        const btnNone = document.getElementById('pos1-btn-none');
+        const btnNone = document.getElementById('modal-pos1-none');
         if (btnNone) btnNone.classList.add('active');
-        document.getElementById('pos1-selected-text').textContent = '無 (四死球/三振)';
       } else {
-        const btn = document.getElementById(`pos1-btn-${pos}`) || event?.target;
-        if (btn && btn.classList) btn.classList.add('active');
-        document.getElementById('pos1-selected-text').textContent = `${pos} ${getPosChinese(String(pos))}`;
+        const btn = document.getElementById(`modal-pos1-${pos}`);
+        if (btn) btn.classList.add('active');
       }
-      updateFieldCodeDisplay();
+      updateModalFieldCode();
     }
 
-    function selectPos2(pos) {
-      selectedPos2 = pos;
-      document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
+    function setModalPos2(pos) {
+      modalPos2 = pos;
+      document.querySelectorAll('#modal-pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
       if (pos === 'none') {
-        const btnNone = document.getElementById('pos2-btn-none');
+        const btnNone = document.getElementById('modal-pos2-none');
         if (btnNone) btnNone.classList.add('active');
-        document.getElementById('pos2-selected-text').textContent = '無 (直接接殺/自踩)';
       } else {
-        const btn = document.getElementById(`pos2-btn-${pos}`) || event?.target;
-        if (btn && btn.classList) btn.classList.add('active');
-        document.getElementById('pos2-selected-text').textContent = `${pos} ${getPosChinese(String(pos))}`;
+        const btn = document.getElementById(`modal-pos2-${pos}`);
+        if (btn) btn.classList.add('active');
       }
-      updateFieldCodeDisplay();
+      updateModalFieldCode();
     }
 
-    function getSynthesizedFieldCode(resultType) {
-      const p1 = selectedPos1;
-      const p2 = selectedPos2;
-
+    function synthesizeFieldCode(resType, p1, p2) {
       if (p1 === 'none' && p2 === 'none') {
-        return resultType;
+        return resType;
       }
-
       if (p2 === 'none') {
-        if (resultType === 'FO') return `F${p1}`;
-        if (resultType === '1B' || resultType === '2B' || resultType === '3B') return `${resultType} ${p1}`;
-        if (resultType === 'E') return `E${p1}`;
+        if (resType === 'FO') return `F${p1}`;
+        if (['1B', '2B', '3B'].includes(resType)) return `${resType} ${p1}`;
+        if (resType === 'HR') return `HR ${p1}`;
+        if (resType === 'E') return `E${p1}`;
         return `${p1}`;
       } else {
-        if (resultType === 'E') return `${p1}E-${p2}`;
+        if (resType === 'E') return `${p1}E-${p2}`;
         return `${p1}-${p2}`;
       }
     }
 
-    function updateFieldCodeDisplay() {
-      const p1 = selectedPos1;
-      const p2 = selectedPos2;
-      const badge = document.getElementById('field-code-badge');
-      if (p1 === 'none' && p2 === 'none') {
-        badge.textContent = `無 (非守備打擊：四壞/三振)`;
-      } else if (p2 === 'none') {
-        badge.textContent = `${p1} (${getPosChinese(String(p1))} 接殺/自踩/直接處理)`;
+    function updateModalFieldCode() {
+      const code = synthesizeFieldCode(currentResultType, modalPos1, modalPos2);
+      const badge = document.getElementById('modal-field-code-badge');
+      if (!badge) return;
+
+      let desc = code;
+      if (modalPos1 === 'none' && modalPos2 === 'none') {
+        desc = `${code} (無守備參與)`;
+      } else if (modalPos2 === 'none') {
+        desc = `${code} (${getPosChinese(String(modalPos1))} 處理/接殺)`;
       } else {
-        badge.textContent = `${p1}-${p2} (${getPosChinese(String(p1))} 接球傳 ${getPosChinese(String(p2))})`;
+        desc = `${code} (${getPosChinese(String(modalPos1))} 傳 ${getPosChinese(String(modalPos2))})`;
       }
+      badge.textContent = desc;
     }
 
     function onPitchInput(type) {
@@ -1462,16 +1421,12 @@
       if (type === 'ball') {
         s.balls++;
         if (s.balls >= 4) {
-          selectPos1('none');
-          selectPos2('none');
           openAdvanceModal('BB');
           return;
         }
       } else if (type === 'called_strike' || type === 'swinging_strike') {
         s.strikes++;
         if (s.strikes >= 3) {
-          selectPos1('none');
-          selectPos2('none');
           openStrikeoutDialog();
           return;
         }
@@ -1482,8 +1437,6 @@
       } else if (type === 'bunt_foul') {
         if (s.strikes >= 2) {
           alert("兩好球後觸擊短打出界，判定三振出局！");
-          selectPos1('none');
-          selectPos2('none');
           openAdvanceModal('K');
           return;
         } else {
@@ -1536,16 +1489,22 @@
       let trajectory = 'ground';
       let outRunnerBase = 1;
       let runnerCode = '6-4';
+      let p1 = 6, p2 = 4;
 
-      if (dpType === '6-4-3') { fieldCode = '6-4-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '6-4'; }
-      else if (dpType === '4-6-3') { fieldCode = '4-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '4-6'; }
-      else if (dpType === '5-4-3') { fieldCode = '5-4-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '5-4'; }
-      else if (dpType === '1-6-3') { fieldCode = '1-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '1-6'; }
-      else if (dpType === '3-6-3') { fieldCode = '3-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '3-6'; }
-      else if (dpType === '1-2-3') { fieldCode = '1-2-3'; trajectory = 'ground'; outRunnerBase = currentGame.status.bases[3] ? 3 : 1; runnerCode = '1-2'; }
-      else if (dpType === 'L6-6') { fieldCode = 'F6'; trajectory = 'line'; outRunnerBase = 1; runnerCode = '6'; }
-      else if (dpType === 'F9-2') { fieldCode = 'F9'; trajectory = 'fly'; outRunnerBase = currentGame.status.bases[3] ? 3 : 1; runnerCode = '9-2'; }
-      else if (dpType === 'K+CS') { fieldCode = 'K'; trajectory = 'none'; outRunnerBase = 1; runnerCode = 'CS 2-4'; }
+      if (dpType === '6-4-3') { fieldCode = '6-4-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '6-4'; p1 = 6; p2 = 4; }
+      else if (dpType === '4-6-3') { fieldCode = '4-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '4-6'; p1 = 4; p2 = 6; }
+      else if (dpType === '5-4-3') { fieldCode = '5-4-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '5-4'; p1 = 5; p2 = 4; }
+      else if (dpType === '1-6-3') { fieldCode = '1-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '1-6'; p1 = 1; p2 = 6; }
+      else if (dpType === '3-6-3') { fieldCode = '3-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '3-6'; p1 = 3; p2 = 6; }
+      else if (dpType === '1-2-3') { fieldCode = '1-2-3'; trajectory = 'ground'; outRunnerBase = currentGame.status.bases[3] ? 3 : 1; runnerCode = '1-2'; p1 = 1; p2 = 2; }
+      else if (dpType === 'L6-6') { fieldCode = 'F6'; trajectory = 'line'; outRunnerBase = 1; runnerCode = '6'; p1 = 6; p2 = 'none'; }
+      else if (dpType === 'F9-2') { fieldCode = 'F9'; trajectory = 'fly'; outRunnerBase = currentGame.status.bases[3] ? 3 : 1; runnerCode = '9-2'; p1 = 9; p2 = 2; }
+      else if (dpType === 'K+CS') { fieldCode = 'K'; trajectory = 'none'; outRunnerBase = 1; runnerCode = 'CS 2-4'; p1 = 'none'; p2 = 'none'; }
+
+      currentResultType = 'DP';
+      modalTraj = trajectory;
+      modalPos1 = p1;
+      modalPos2 = p2;
 
       pendingPlay = {
         resultType: 'DP',
@@ -1567,7 +1526,14 @@
       const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
       const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
 
-      document.getElementById('adv-dialog-title').textContent = `${batter.name} (#${batter.number}) ─ 雙殺守備 [${play.fieldCode}]`;
+      setModalTraj(modalTraj);
+      setModalPos1(modalPos1);
+      setModalPos2(modalPos2);
+
+      document.getElementById('group-trajectory').style.display = 'block';
+      document.getElementById('group-fielding').style.display = 'block';
+
+      document.getElementById('adv-dialog-title').textContent = `${batter.name} (#${batter.number}) ─ 雙殺守備 [${play.dpType}]`;
       const container = document.getElementById('adv-dialog-rows');
 
       let rowsHtml = `
@@ -1603,42 +1569,72 @@
     }
 
     function openAdvanceModal(resultType) {
+      currentResultType = resultType;
       const s = currentGame.status;
       const battingTeamKey = s.isTop ? 'away' : 'home';
       const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
       const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
 
-      if (resultType === 'GO' && selectedPos2 === 'none' && selectedPos1 !== 3) {
-        selectedPos2 = 3;
-        updateFieldCodeDisplay();
-        document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
-        const btn3 = document.getElementById('pos2-btn-3');
-        if (btn3) btn3.classList.add('active');
-        document.getElementById('pos2-selected-text').textContent = '3 一壘 (1B)';
+      // 依據打擊結果設定智慧預設值
+      if (['1B', '2B', '3B'].includes(resultType)) {
+        modalTraj = 'line';
+        modalPos1 = 8;
+        modalPos2 = 'none';
+      } else if (resultType === 'HR') {
+        modalTraj = 'fly';
+        modalPos1 = 8;
+        modalPos2 = 'none';
+      } else if (['BB', 'IBB', 'HBP', 'K', 'ꓘ'].includes(resultType)) {
+        modalTraj = 'none';
+        modalPos1 = 'none';
+        modalPos2 = 'none';
+      } else if (resultType === 'Ʞ') {
+        modalTraj = 'none';
+        modalPos1 = 2;
+        modalPos2 = 3;
+      } else if (resultType === 'GO') {
+        modalTraj = 'ground';
+        modalPos1 = 6;
+        modalPos2 = 3;
+      } else if (resultType === 'FO') {
+        modalTraj = 'fly';
+        modalPos1 = 8;
+        modalPos2 = 'none';
+      } else if (resultType === 'E') {
+        modalTraj = 'ground';
+        modalPos1 = 6;
+        modalPos2 = 'none';
+      } else if (resultType === 'SAC') {
+        modalTraj = 'ground';
+        modalPos1 = 2;
+        modalPos2 = 3;
+      } else if (resultType === 'SF') {
+        modalTraj = 'fly';
+        modalPos1 = 8;
+        modalPos2 = 'none';
+      } else {
+        modalTraj = 'ground';
+        modalPos1 = 6;
+        modalPos2 = 'none';
       }
 
-      if (resultType === 'FO') {
-        selectedPos2 = 'none';
-        selectedTrajectory = 'fly';
-        selectTrajectory('fly');
-        updateFieldCodeDisplay();
-        document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
-        const btnNone = document.getElementById('pos2-btn-none');
-        if (btnNone) btnNone.classList.add('active');
-        document.getElementById('pos2-selected-text').textContent = '無 (直接接殺/自踩)';
-      }
+      setModalTraj(modalTraj);
+      setModalPos1(modalPos1);
+      setModalPos2(modalPos2);
 
-      const fieldCode = getSynthesizedFieldCode(resultType);
-      const defaultAdv = BaseballEngine.inferAdvancement(s.bases, resultType, resultType === 'BB' || resultType === 'HBP');
+      const isNonFielding = ['BB', 'IBB', 'HBP', 'K', 'ꓘ'].includes(resultType);
+      document.getElementById('group-trajectory').style.display = isNonFielding ? 'none' : 'block';
+      document.getElementById('group-fielding').style.display = isNonFielding ? 'none' : 'block';
+
+      const defaultAdv = BaseballEngine.inferAdvancement(s.bases, resultType, ['BB', 'IBB', 'HBP'].includes(resultType));
 
       pendingPlay = {
         resultType,
-        direction: selectedPos1,
-        trajectory: selectedTrajectory !== 'none' ? selectedTrajectory : undefined,
-        fieldCode: fieldCode
+        direction: modalPos1,
+        trajectory: modalTraj !== 'none' ? modalTraj : undefined
       };
 
-      document.getElementById('adv-dialog-title').textContent = `${batter.name} (#${batter.number}) ─ ${resultType} [${fieldCode}]`;
+      document.getElementById('adv-dialog-title').textContent = `${batter.name} (#${batter.number}) ─ ${resultType}`;
       const container = document.getElementById('adv-dialog-rows');
 
       let rowsHtml = `
@@ -1685,6 +1681,8 @@
     function commitPlayAndAdvance() {
       if (!pendingPlay) return;
 
+      const finalCode = synthesizeFieldCode(currentResultType, modalPos1, modalPos2);
+
       const batterAdv = document.getElementById('adv-select-batter').value;
       const runnersAdv = {};
       [1, 2, 3].forEach(b => {
@@ -1692,6 +1690,9 @@
         if (el) runnersAdv[b] = el.value;
       });
 
+      pendingPlay.fieldCode = finalCode;
+      pendingPlay.direction = modalPos1;
+      pendingPlay.trajectory = modalTraj !== 'none' ? modalTraj : undefined;
       pendingPlay.advances = {
         batter: batterAdv,
         runners: runnersAdv
