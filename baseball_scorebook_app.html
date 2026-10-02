@@ -100,15 +100,70 @@
       padding: 12px;
     }
 
-    /* 模擬手機外框模式 (當在桌機點選手機模式時) */
-    .app-container.mode-mobile {
-      max-width: 430px;
-      background: #ffffff;
-      border: 8px solid #1e293b;
-      border-radius: 36px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-      margin: 12px auto;
-      padding: 12px;
+    /* 電腦 / 平板螢幕：點選手機模式時顯示模擬手機外框 */
+    @media (min-width: 768px) {
+      .app-container.mode-mobile {
+        max-width: 430px;
+        background: #ffffff;
+        border: 8px solid #1e293b;
+        border-radius: 36px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        margin: 12px auto;
+        padding: 12px;
+      }
+    }
+
+    /* 真實手機螢幕 (<768px)：自動滿版，移除厚邊框與外距，防止被裁切 */
+    @media (max-width: 767px) {
+      .app-container, .app-container.mode-mobile {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 8px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+
+      header {
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .header-tools {
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .tool-btn {
+        padding: 4px 8px;
+        font-size: 0.72rem;
+        white-space: nowrap;
+      }
+
+      .keypad {
+        gap: 4px;
+      }
+
+      .key-btn {
+        padding: 8px 2px;
+        font-size: 0.85rem;
+      }
+
+      .key-btn span.sub {
+        font-size: 0.6rem;
+      }
+
+      .field-sub-grid {
+        gap: 3px;
+      }
+
+      .pos-mini-btn {
+        padding: 6px 1px;
+        font-size: 0.7rem;
+      }
     }
 
     /* iPad 橫向雙欄佈局 */
@@ -316,24 +371,27 @@
     .base-node.node-2b { top: 2px; left: 30px; }
     .base-node.node-3b { bottom: 30px; left: 2px; }
 
-    /* 逐球好壞球控制列 */
+    /* 逐球好壞球控制列 (自動縮減防撐爆) */
     .pitch-strip {
       display: flex;
-      gap: 6px;
+      gap: 4px;
       margin-bottom: 12px;
+      overflow-x: auto;
     }
 
     .pitch-key {
       flex: 1;
-      padding: 9px 4px;
+      min-width: 0;
+      padding: 8px 2px;
       border: 1px solid var(--border);
       background: white;
       border-radius: 8px;
-      font-size: 0.88rem;
+      font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
       transition: all 0.15s;
+      white-space: nowrap;
     }
 
     .pitch-key:active { transform: scale(0.97); background: #f1f5f9; }
@@ -1164,7 +1222,6 @@
           document.getElementById('btn-tab-away').textContent = `先攻 (${setup.away.name.slice(0, 4)})`;
           document.getElementById('btn-tab-home').textContent = `後攻 (${setup.home.name.slice(0, 4)})`;
 
-          // 剛剛從賽前頁面送出，是全新比賽，不載入展示打席
           return;
         } catch (e) {
           console.error("載入賽前名單失敗，退回預設示範陣容:", e);
@@ -1206,18 +1263,15 @@
     }
 
     function loadInitialShowcasePlays() {
-      // 1棒 簡亦汛 BB
       BaseballEngine.recordPlay(currentGame, {
         resultType: 'BB',
         advances: { batter: '1B' }
       });
-      // 2棒 高新策 犧牲短打 [1-3]
       BaseballEngine.recordPlay(currentGame, {
         resultType: 'SAC',
         fieldCode: '1-3',
         advances: { batter: 'OUT', runners: { 1: 'ADV_2' } }
       });
-      // 3棒 譚翔 1B 中外平飛安打 1分打點
       BaseballEngine.recordPlay(currentGame, {
         resultType: '1B',
         direction: 8,
@@ -1225,7 +1279,6 @@
         fieldCode: '1B 8',
         advances: { batter: '1B', runners: { 2: 'SCORE' } }
       });
-      // 4棒 楊敏達 HR 兩分砲
       BaseballEngine.recordPlay(currentGame, {
         resultType: 'HR',
         direction: 7,
@@ -1261,12 +1314,10 @@
       checkBalances();
     }
 
-    // 當前選擇狀態：擊球性質與雙守備方位
-    let selectedTrajectory = 'ground'; // 'ground' | 'line' | 'fly' | 'none'
-    let selectedPos1 = 6;              // 守備方位 1 (預設 6 游擊)
-    let selectedPos2 = 'none';         // 守備方位 2 (預設 'none'，可為 1~9)
+    let selectedTrajectory = 'ground';
+    let selectedPos1 = 6;
+    let selectedPos2 = 'none';
 
-    // 切換擊球性質 (物理軌跡)
     function selectTrajectory(traj) {
       selectedTrajectory = traj;
       document.querySelectorAll('.traj-btn').forEach(b => b.classList.remove('active'));
@@ -1282,7 +1333,6 @@
       document.getElementById('cur-traj-desc').textContent = `目前：${labels[traj] || traj}`;
     }
 
-    // 選擇守備方位 1 (支援選無)
     function selectPos1(pos) {
       selectedPos1 = pos;
       document.querySelectorAll('#pos1-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
@@ -1298,7 +1348,6 @@
       updateFieldCodeDisplay();
     }
 
-    // 選擇守備方位 2 (可選無)
     function selectPos2(pos) {
       selectedPos2 = pos;
       document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
@@ -1314,7 +1363,6 @@
       updateFieldCodeDisplay();
     }
 
-    // 即時計算合成守備代碼 (例如 6-4, 6-3, 8 等)
     function getSynthesizedFieldCode(resultType) {
       const p1 = selectedPos1;
       const p2 = selectedPos2;
@@ -1329,7 +1377,6 @@
         if (resultType === 'E') return `E${p1}`;
         return `${p1}`;
       } else {
-        // 雙守備方位協同 (如 6-4 封殺, 6-3 刺殺)
         if (resultType === 'E') return `${p1}E-${p2}`;
         return `${p1}-${p2}`;
       }
@@ -1348,13 +1395,11 @@
       }
     }
 
-    // 逐球點燈 (新增擊球進場、第4壞球自動BB、第3好球自動彈出三振選擇)
     function onPitchInput(type) {
       const s = currentGame.status;
       s.currentPitches.push(type);
 
       if (type === 'put_in_play') {
-        // 擊球進場 (•)：球數記錄，等待記錄員點選擊球性質與打擊結果
         refreshDashboard();
         return;
       }
@@ -1362,7 +1407,6 @@
       if (type === 'ball') {
         s.balls++;
         if (s.balls >= 4) {
-          // 第 4 個壞球：方位1與2自動設為「無」，打擊結果自動為四壞 BB！
           selectPos1('none');
           selectPos2('none');
           openAdvanceModal('BB');
@@ -1371,19 +1415,16 @@
       } else if (type === 'called_strike' || type === 'swinging_strike') {
         s.strikes++;
         if (s.strikes >= 3) {
-          // 第 3 個好球：方位1與2自動設為「無」，跳出三振選項彈窗！
           selectPos1('none');
           selectPos2('none');
           openStrikeoutDialog();
           return;
         }
       } else if (type === 'foul') {
-        // 界外球：兩好球前計一好球；兩好球後維持兩好球
         if (s.strikes < 2) {
           s.strikes++;
         }
       } else if (type === 'bunt_foul') {
-        // 短打界外：兩好球後短打界外判定三振出局！
         if (s.strikes >= 2) {
           alert("兩好球後觸擊短打出界，判定三振出局！");
           selectPos1('none');
@@ -1397,7 +1438,6 @@
       refreshDashboard();
     }
 
-    // 三振類型選擇彈窗控制
     function openStrikeoutDialog() {
       document.getElementById('strikeout-dialog').style.display = 'flex';
     }
@@ -1409,10 +1449,9 @@
     function confirmStrikeoutType(type) {
       closeStrikeoutDialog();
       if (type === 'uncaught_k') {
-        // 不死三振：打者安全上一壘，傳正確 resultType='Ʞ' 給引擎
         openAdvanceModal('Ʞ');
       } else {
-        openAdvanceModal(type); // 'K' 或 'ꓘ'
+        openAdvanceModal(type);
       }
     }
 
@@ -1423,25 +1462,21 @@
       refreshDashboard();
     }
 
-    // 開啟跑者推進彈窗
     function openAdvanceModal(resultType) {
       const s = currentGame.status;
       const battingTeamKey = s.isTop ? 'away' : 'home';
       const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
       const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
 
-      // 若點擊滾地出局但方位2為無，智慧預設為一壘刺殺 (例如 6-3)
       if (resultType === 'GO' && selectedPos2 === 'none' && selectedPos1 !== 3) {
         selectedPos2 = 3;
         updateFieldCodeDisplay();
-        // 更新方位2按鈕亮燈
         document.querySelectorAll('#pos2-grid .pos-mini-btn').forEach(b => b.classList.remove('active'));
         const btn3 = document.getElementById('pos2-btn-3');
         if (btn3) btn3.classList.add('active');
         document.getElementById('pos2-selected-text').textContent = '3 一壘 (1B)';
       }
 
-      // 若點擊飛球接殺，自動將方位2設為無
       if (resultType === 'FO') {
         selectedPos2 = 'none';
         selectedTrajectory = 'fly';
@@ -1453,10 +1488,7 @@
         document.getElementById('pos2-selected-text').textContent = '無 (直接接殺/自踩)';
       }
 
-      // 計算合成守備代碼
       const fieldCode = getSynthesizedFieldCode(resultType);
-
-      // 呼叫智慧推進推算
       const defaultAdv = BaseballEngine.inferAdvancement(s.bases, resultType, resultType === 'BB' || resultType === 'HBP');
 
       pendingPlay = {
@@ -1510,7 +1542,6 @@
       pendingPlay = null;
     }
 
-    // 確定記錄並更新整場狀態
     function commitPlayAndAdvance() {
       if (!pendingPlay) return;
 
@@ -1526,10 +1557,8 @@
         runners: runnersAdv
       };
 
-      // 呼叫引擎執行核心狀態機
       const playRes = BaseballEngine.recordPlay(currentGame, pendingPlay);
 
-      // 若發生 3 出局攻守交換，自動切換至新進攻方紙本標籤頁！
       if (playRes && playRes.inningChanged) {
         activeScorebookTab = currentGame.status.isTop ? 'away' : 'home';
         document.getElementById('btn-tab-away').classList.toggle('active', activeScorebookTab === 'away');
@@ -1544,22 +1573,18 @@
       checkBalances();
     }
 
-    // 刷新儀表板 (Scoreboard, Matchup, Bases)
     function refreshDashboard() {
       const s = currentGame.status;
 
-      // 比分
       document.getElementById('score-away-text').textContent = s.scoreAway;
       document.getElementById('score-home-text').textContent = s.scoreHome;
       document.getElementById('inning-status-text').textContent = `${s.isTop ? '▲' : '▼'} ${s.inning} 局 ${s.isTop ? '上' : '下'}`;
       document.getElementById('batting-team-sub').textContent = `${s.isTop ? currentGame.teams.away.name : currentGame.teams.home.name} 進攻`;
 
-      // 球數燈
       for (let i = 1; i <= 3; i++) document.getElementById(`lamp-b${i}`).classList.toggle('active', s.balls >= i);
       for (let i = 1; i <= 2; i++) document.getElementById(`lamp-s${i}`).classList.toggle('active', s.strikes >= i);
       for (let i = 1; i <= 2; i++) document.getElementById(`lamp-o${i}`).classList.toggle('active', s.outs >= i);
 
-      // 當前打者卡片
       const battingTeamKey = s.isTop ? 'away' : 'home';
       const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
       const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
@@ -1570,13 +1595,11 @@
         document.getElementById('profile-pos').textContent = getPosChinese(batter.pos);
       }
 
-      // 壘包亮燈
       document.getElementById('field-node-1').classList.toggle('occupied', !!s.bases[1]);
       document.getElementById('field-node-2').classList.toggle('occupied', !!s.bases[2]);
       document.getElementById('field-node-3').classList.toggle('occupied', !!s.bases[3]);
     }
 
-    // 渲染早稻田數位紙本 9×9 矩陣 (包含個人成績統計)
     function renderScorebookMatrix() {
       const teamKey = activeScorebookTab;
       const team = currentGame.teams[teamKey];
@@ -1589,7 +1612,6 @@
         let cellsHtml = '';
         let pPA = 0, pAB = 0, pH = 0, pR = 0, pRBI = 0, pBB = 0;
 
-        // 渲染 1~7 局
         for (let inn = 1; inn <= 7; inn++) {
           const cell = matrix[pIdx] && matrix[pIdx][inn];
           if (cell) {
@@ -1631,7 +1653,6 @@
 
       tbody.innerHTML = html;
 
-      // 渲染局底得分 tfoot
       const tfoot = document.getElementById('matrix-tfoot');
       const line = (teamKey === 'away') ? currentGame.lineScore.away : currentGame.lineScore.home;
       let innScoreHtml = '';
@@ -1648,7 +1669,6 @@
       `;
     }
 
-    // 渲染投手數據表
     function renderPitcherTable() {
       const tbody = document.getElementById('pitcher-tbody');
       const pitcherAway = currentGame.teams.away.pitchers[0];
@@ -1684,7 +1704,6 @@
       `;
     }
 
-    // 渲染文字轉播
     function renderPBPFeed() {
       const container = document.getElementById('pbp-feed-list');
       container.innerHTML = currentGame.pbpEvents.map(e => `
@@ -1694,7 +1713,6 @@
       `).join('');
     }
 
-    // 執行早稻田平衡檢核
     function checkBalances() {
       const check = BaseballEngine.checkGameBalance(currentGame, activeScorebookTab);
       const b1 = document.getElementById('balance-badge-1');
@@ -1762,7 +1780,6 @@
       window.print();
     }
 
-    // 28人名單調度視窗
     function openRosterDialog() {
       const dialog = document.getElementById('roster-dialog');
       const list = document.getElementById('roster-dialog-list');
