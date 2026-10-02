@@ -1,6 +1,6 @@
 /**
  * Baseball Scoring Engine (棒球計分與規則狀態機)
- * 完整支援早稻田式計分規範、跑者進壘邏輯、打擊/投手數據自動統計、雙重平衡檢核
+ * 完整支援早稻田式計分規範、雙殺守備 (DP)、跑者進壘邏輯、打擊/投手數據自動統計、雙重平衡檢核
  */
 
 (function (global, factory) {
@@ -14,12 +14,34 @@
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  /**
-   * 建立一場新賽事狀態物件
-   */
+  function createPitcherStats(pitcher) {
+    return {
+      name: pitcher.name || "投手",
+      number: pitcher.number || "1",
+      winLoss: pitcher.winLoss || "-",
+      outs: 0,
+      np: 0,
+      bf: 0,
+      h: 0,
+      hr: 0,
+      so: 0,
+      bb: 0,
+      r: 0,
+      er: 0
+    };
+  }
+
   function createNewGame(options = {}) {
     const defaultAwayLineup = options.awayLineup || [];
     const defaultHomeLineup = options.homeLineup || [];
+
+    const awayPitchers = (options.awayPitchers && options.awayPitchers.length > 0)
+      ? options.awayPitchers.map(createPitcherStats)
+      : [createPitcherStats({ name: "黃思學", number: "18" })];
+
+    const homePitchers = (options.homePitchers && options.homePitchers.length > 0)
+      ? options.homePitchers.map(createPitcherStats)
+      : [createPitcherStats({ name: "鄭凱文", number: "19" })];
 
     return {
       id: "GAME_" + Date.now(),
@@ -32,60 +54,51 @@
         weather: "晴朗",
         wind: "無風"
       },
-      // 球隊資訊
       teams: {
         away: {
           name: options.awayName || "台中小海盜大叔隊",
-          lineup: defaultAwayLineup, // 先發 9 人
+          lineup: defaultAwayLineup,
           bench: options.awayBench || [],
-          pitchers: options.awayPitchers || [],
+          pitchers: awayPitchers,
           currentPitcherIdx: 0,
-          stats: {} // 各球員統計
+          stats: {}
         },
         home: {
           name: options.homeName || "台中獵犬棒球隊",
           lineup: defaultHomeLineup,
           bench: options.homeBench || [],
-          pitchers: options.homePitchers || [],
+          pitchers: homePitchers,
           currentPitcherIdx: 0,
           stats: {}
         }
       },
-      // 比賽即時狀態
       status: {
         inning: 1,
-        isTop: true,          // true: 上半局 (Away攻), false: 下半局 (Home攻)
+        isTop: true,
         outs: 0,
         balls: 0,
         strikes: 0,
         scoreAway: 0,
         scoreHome: 0,
-        awayOrderIdx: 0,      // 客隊當前棒次 (0~8)
-        homeOrderIdx: 0,      // 主隊當前棒次 (0~8)
-        bases: { 1: null, 2: null, 3: null }, // 各壘跑者: { player, fromBase, paId }
-        currentPitches: [],   // 本打席逐球 ['ball', 'called_strike', ...]
-        currentPitcherBF: 0   // 當前投手面對打席數
+        awayOrderIdx: 0,
+        homeOrderIdx: 0,
+        bases: { 1: null, 2: null, 3: null },
+        currentPitches: [],
+        currentPitcherBF: 0
       },
-      // 局得分板
       lineScore: {
         away: { innings: [0], runs: 0, hits: 0, errors: 0, lobs: 0 },
         home: { innings: [0], runs: 0, hits: 0, errors: 0, lobs: 0 }
       },
-      // 菱形格矩陣資料: matrix[teamKey][playerIdx][inning] = [cellData1, cellData2...]
       scoreMatrix: {
         away: {},
         home: {}
       },
-      // 逐打席流水事件 (Play-by-Play Logs)
       pbpEvents: [],
-      // 歷史操作堆疊 (供 Undo 功能)
       historyStack: []
     };
   }
 
-  /**
-   * 計算智慧跑者預設推進 (Default Runner Advancement Inference)
-   */
   function inferAdvancement(bases, hitType, isWalk) {
     const adv = {
       batter: 'OUT',
@@ -94,7 +107,6 @@
 
     if (isWalk) {
       adv.batter = '1B';
-      // 滿壘擠回得分，連環推進
       if (bases[1] && bases[2] && bases[3]) {
         adv.runners[3] = 'SCORE';
         adv.runners[2] = 'ADV_3';
@@ -133,23 +145,23 @@
         if (bases[2]) adv.runners[2] = 'SCORE';
         if (bases[1]) adv.runners[1] = 'SCORE';
         break;
-      case 'SAC': // 犧牲短打護送前位跑者
+      case 'SAC':
         adv.batter = 'OUT';
         if (bases[3]) adv.runners[3] = 'SCORE';
         if (bases[2]) adv.runners[2] = 'ADV_3';
         if (bases[1]) adv.runners[1] = 'ADV_2';
         break;
-      case 'SF': // 高飛犧牲打
+      case 'SF':
         adv.batter = 'OUT';
         if (bases[3]) adv.runners[3] = 'SCORE';
         break;
-      case 'Ʞ': // 不死三振 (Uncaught 3rd strike)
+      case 'Ʞ':
         adv.batter = '1B';
         if (bases[1]) adv.runners[1] = 'ADV_2';
         if (bases[2]) adv.runners[2] = 'ADV_3';
         if (bases[3]) adv.runners[3] = 'SCORE';
         break;
-      default: // 刺殺、接殺、三振
+      default:
         adv.batter = 'OUT';
         break;
     }
@@ -157,16 +169,37 @@
     return adv;
   }
 
-  /**
-   * 執行並記錄一個完整打席事件
-   * @param {Object} game 賽事物件
-   * @param {Object} playPayload 打席結果參數
-   */
+  function markRunnerOutInMatrix(game, teamKey, playerIdx, inning, targetBaseName, fieldCode, outNumber, isDoublePlay) {
+    const matrix = game.scoreMatrix[teamKey];
+    if (matrix && matrix[playerIdx] && matrix[playerIdx][inning]) {
+      const cell = matrix[playerIdx][inning];
+      cell.center = cell.center || {};
+      cell.center.outNumber = outNumber;
+      if (isDoublePlay) {
+        cell.doublePlay = true;
+      }
+
+      if (targetBaseName === 'second' || targetBaseName === '2' || targetBaseName === 1) {
+        cell.interruptedPath = { from: 'first', to: 'second', ratio: 0.5 };
+        cell.notations = cell.notations || {};
+        cell.notations.second = { text: fieldCode || 'DP' };
+      } else if (targetBaseName === 'third' || targetBaseName === '3' || targetBaseName === 2) {
+        cell.interruptedPath = { from: 'second', to: 'third', ratio: 0.5 };
+        cell.notations = cell.notations || {};
+        cell.notations.third = { text: fieldCode || 'DP' };
+      } else if (targetBaseName === 'home' || targetBaseName === '4' || targetBaseName === 3) {
+        cell.interruptedPath = { from: 'third', to: 'home', ratio: 0.5 };
+        cell.notations = cell.notations || {};
+        cell.notations.home = { text: fieldCode || 'DP' };
+      }
+    }
+  }
+
   function recordPlay(game, playPayload) {
-    // 儲存 Undo 快照
     saveSnapshot(game);
 
     const s = game.status;
+    const outsBefore = s.outs;
     const battingTeamKey = s.isTop ? 'away' : 'home';
     const fieldingTeamKey = s.isTop ? 'home' : 'away';
     const battingTeam = game.teams[battingTeamKey];
@@ -176,12 +209,15 @@
     const pitcher = fieldingTeam.pitchers[fieldingTeam.currentPitcherIdx] || { name: "先發投手", number: "1" };
 
     const {
-      resultType,        // '1B', '2B', '3B', 'HR', 'BB', 'IBB', 'HBP', 'K', 'ꓘ', 'Ʞ', 'GO', 'FO', 'E', 'SAC', 'SF', 'FC'
-      direction = 8,     // 守備位置 1~9 (例如 8 中外野)
-      trajectory = 'none',// 'line', 'fly', 'ground'
-      fieldCode = '',    // 如 '6-3', '4-3', '3A', '6E-3'
-      customRBI = null,  // 手動覆寫打點數
-      advances = {}      // 跑者推進判定: { batter: '1B'|'2B'|'3B'|'HR'|'OUT', runners: { 1: ..., 2: ..., 3: ... } }
+      resultType,
+      direction = 8,
+      trajectory = 'none',
+      fieldCode = '',
+      customRBI = null,
+      advances = {},
+      isDoublePlay = false,
+      dpType = '',
+      runnerFieldCodes = {}
     } = playPayload;
 
     let runsScoredThisPlay = 0;
@@ -192,15 +228,15 @@
     let isHBP = false;
     let isSAC = false;
     let isSF = false;
-    let isStrikeout = false;
+    let isStrikeout = (resultType === 'K' || resultType === 'ꓘ' || dpType === 'K+CS');
     let isError = false;
 
-    // 1. 打者上壘路徑與標記準備
     let cellPaths = {};
     let cellNotations = {};
     let cellCenter = {};
 
-    // 判斷打擊性質
+    const actualDP = isDoublePlay || resultType === 'DP';
+
     if (['1B', '2B', '3B', 'HR'].includes(resultType)) {
       isHit = true;
       if (resultType === '1B') cellPaths.first = true;
@@ -227,17 +263,14 @@
     } else if (resultType === 'K' || resultType === 'ꓘ') {
       isStrikeout = true;
     } else if (resultType === 'Ʞ') {
-      // 不死三振：計投手三振、計打者打數、不計安打、打者進佔一壘
       isStrikeout = true;
       isAB = true;
       cellPaths.first = true;
     }
 
-    // 2. 跑者推進與得分統計
     const nextBases = { 1: null, 2: null, 3: null };
     const runnersAdv = advances.runners || {};
 
-    // 檢查現有壘包跑者
     [3, 2, 1].forEach(base => {
       const runner = s.bases[base];
       if (!runner) return;
@@ -246,7 +279,6 @@
       if (act === 'SCORE') {
         runsScoredThisPlay++;
         rbiCount++;
-        // 註記該跑者得分
         updateRunnerScoredInMatrix(game, battingTeamKey, runner.playerIdx, runner.startInning, batter.order);
       } else if (act === 'ADV_3') {
         nextBases[3] = runner;
@@ -256,10 +288,12 @@
         nextBases[base] = runner;
       } else if (act === 'OUT') {
         s.outs++;
+        const targetBaseName = (base === 1) ? 'second' : (base === 2) ? 'third' : 'home';
+        const runnerCode = runnerFieldCodes[base] || (actualDP ? 'DP' : 'OUT');
+        markRunnerOutInMatrix(game, battingTeamKey, runner.playerIdx, runner.startInning, targetBaseName, runnerCode, s.outs, actualDP);
       }
     });
 
-    // 處理打者自身進壘
     const batterAdv = advances.batter || resultType;
     if (batterAdv === 'HR') {
       runsScoredThisPlay++;
@@ -271,7 +305,6 @@
     } else if (batterAdv === '1B' || isBB || isHBP || isError) {
       nextBases[1] = { player: batter, playerIdx: currentOrderIdx, startInning: s.inning };
     } else {
-      // 打者出局
       s.outs++;
     }
 
@@ -279,7 +312,6 @@
       rbiCount = parseInt(customRBI);
     }
 
-    // 3. 組合早稻田外圈與內圈符號
     let hitText = fieldCode || resultType;
     if (isHit && !fieldCode) {
       hitText = `${resultType} ${direction}`;
@@ -299,9 +331,8 @@
     }
 
     if (cellCenter.isRun) {
-      // HR 已標 isRun
+      // HR
     } else if (resultType === 'Ʞ') {
-      // 不死三振：打者安全上一壘，只顯示 K 符號，不記出局數
       cellCenter.strikeout = 'swinging';
     } else if (s.outs > 0 && (batterAdv === 'OUT' || isStrikeout)) {
       cellCenter.outNumber = s.outs;
@@ -310,7 +341,6 @@
       }
     }
 
-    // 4. 寫入早稻田矩陣
     if (!game.scoreMatrix[battingTeamKey][currentOrderIdx]) {
       game.scoreMatrix[battingTeamKey][currentOrderIdx] = {};
     }
@@ -318,11 +348,11 @@
       pitches: [...s.currentPitches, 'put_in_play'],
       paths: cellPaths,
       notations: cellNotations,
-      center: cellCenter
+      center: cellCenter,
+      doublePlay: actualDP
     };
     game.scoreMatrix[battingTeamKey][currentOrderIdx][s.inning] = cellData;
 
-    // 5. 更新比賽比分與局得分板
     if (s.isTop) {
       s.scoreAway += runsScoredThisPlay;
       ensureInningLineScore(game.lineScore.away, s.inning);
@@ -339,7 +369,6 @@
       if (isError) game.lineScore.away.errors++;
     }
 
-    // 6. 生成逐打席中文化轉播文字
     const inningName = `${s.inning}局${s.isTop ? '上' : '下'}`;
     const pbpMessage = generatePBPDescription({
       inningName,
@@ -350,7 +379,9 @@
       hitText,
       rbiCount,
       runsScoredThisPlay,
-      outsAfter: s.outs
+      outsAfter: s.outs,
+      isDoublePlay: actualDP,
+      dpType
     });
     game.pbpEvents.unshift({
       id: "PBP_" + Date.now(),
@@ -361,47 +392,56 @@
       scoreSnapshot: `${s.scoreAway}:${s.scoreHome}`
     });
 
-    // 7. 更新壘包跑者
     s.bases = nextBases;
 
-    // 剛完成打席的進攻隊伍，下次輪到下一棒
     if (battingTeamKey === 'away') {
       s.awayOrderIdx = (s.awayOrderIdx + 1) % 9;
     } else {
       s.homeOrderIdx = (s.homeOrderIdx + 1) % 9;
     }
 
-    // 8. 檢查三人出局換局
     let inningChanged = false;
     if (s.outs >= 3) {
       inningChanged = true;
-      // 標註該打席局末雙斜線 //
       cellData.isInningEnd = true;
 
-      // 結算半局殘壘 (LOB)
       let halfInningLOB = 0;
       [1, 2, 3].forEach(b => {
         if (s.bases[b]) {
           halfInningLOB++;
-          // 在留在壘上的跑者格子中央標記草書 ℓ
           markLOBInMatrix(game, battingTeamKey, s.bases[b].playerIdx, s.bases[b].startInning);
         }
       });
       if (s.isTop) game.lineScore.away.lobs += halfInningLOB;
       else game.lineScore.home.lobs += halfInningLOB;
 
-      // 切換半局
       s.outs = 0;
       s.bases = { 1: null, 2: null, 3: null };
       if (s.isTop) {
-        s.isTop = false; // 換下半局 (主隊進攻)
+        s.isTop = false;
       } else {
-        s.isTop = true;  // 換下一局上半 (客隊進攻)
+        s.isTop = true;
         s.inning++;
       }
     }
 
-    // 清空逐球球數
+    if (pitcher) {
+      pitcher.bf = (pitcher.bf || 0) + 1;
+      const pitchesCount = (s.currentPitches && s.currentPitches.length > 0) ? s.currentPitches.length : 1;
+      pitcher.np = (pitcher.np || 0) + pitchesCount;
+
+      if (isHit) pitcher.h = (pitcher.h || 0) + 1;
+      if (resultType === 'HR') pitcher.hr = (pitcher.hr || 0) + 1;
+      if (isStrikeout) pitcher.so = (pitcher.so || 0) + 1;
+      if (isBB || isHBP) pitcher.bb = (pitcher.bb || 0) + 1;
+
+      pitcher.r = (pitcher.r || 0) + runsScoredThisPlay;
+      if (!isError) pitcher.er = (pitcher.er || 0) + runsScoredThisPlay;
+
+      const outsThisPlay = inningChanged ? (3 - outsBefore) : (s.outs - outsBefore);
+      pitcher.outs = (pitcher.outs || 0) + Math.max(0, outsThisPlay);
+    }
+
     s.balls = 0;
     s.strikes = 0;
     s.currentPitches = [];
@@ -414,12 +454,25 @@
     };
   }
 
-  /**
-   * 中文化逐打席賽況文字轉譯器
-   */
   function generatePBPDescription(info) {
-    const { inningName, batter, resultType, hitText, rbiCount, runsScoredThisPlay, outsAfter } = info;
+    const { inningName, batter, resultType, hitText, rbiCount, runsScoredThisPlay, outsAfter, isDoublePlay, dpType } = info;
     let desc = `【${inningName}】第 ${batter.order} 棒 #${batter.number} ${batter.name} `;
+
+    if (isDoublePlay || resultType === 'DP') {
+      if (dpType === '6-4-3') desc += `擊出 6-4-3 滾地雙殺打，防守方傳二壘再轉傳一壘完成雙殺守備！`;
+      else if (dpType === '4-6-3') desc += `擊出 4-6-3 滾地雙殺打，防守方傳游擊再轉傳一壘完成雙殺守備！`;
+      else if (dpType === '5-4-3') desc += `擊出 5-4-3 滾地雙殺打，三壘手接球轉傳二壘、再傳一壘完成雙殺！`;
+      else if (dpType === '1-6-3') desc += `擊出 1-6-3 投手前滾地雙殺打，投手傳二壘再轉傳一壘完成雙殺！`;
+      else if (dpType === '3-6-3') desc += `擊出 3-6-3 一壘滾地雙殺打，一壘手傳二壘再轉傳一壘完成雙殺！`;
+      else if (dpType === '1-2-3') desc += `擊出本壘方向強迫雙殺打，傳本壘封殺跑者、捕手再轉傳一壘完成雙殺！`;
+      else if (dpType === 'L6-6') desc += `擊出內野平飛球遭接殺，傳壘刺殺回壘不及之跑者，形成雙殺！`;
+      else if (dpType === 'F9-2') desc += `擊出外野高飛球遭接殺，外野手長傳本壘刺殺搶攻跑者，形成雙殺！`;
+      else if (dpType === 'K+CS') desc += `揮棒落空遭三振，捕手快速傳壘阻殺盜壘跑者，形成三振雙殺！`;
+      else desc += `擊出 ${hitText} 雙殺打，形成雙殺守備！`;
+
+      desc += ` (${outsAfter} 出局【雙殺】)`;
+      return desc;
+    }
 
     switch (resultType) {
       case '1B':
@@ -495,12 +548,7 @@
     return desc;
   }
 
-  /**
-   * 計算並校驗早稻田平衡公式
-   */
   function checkGameBalance(game, teamKey) {
-    // 公式 1: 打席平衡 PA = AB + BB + HBP + SH + SF + INT
-    // 公式 2: 局況平衡 PA = R + LOB + PO
     const team = game.teams[teamKey];
     let totalPA = 0;
     let totalAB = 0;
@@ -550,8 +598,6 @@
     const isFormula1Balanced = (totalPA === formula1Sum);
 
     const line = (teamKey === 'away') ? game.lineScore.away : game.lineScore.home;
-    const oppoLine = (teamKey === 'away') ? game.lineScore.home : game.lineScore.away;
-    // 總出局數 PO: 守備方已完成局數 * 3 + 當前出局
     const completedInnings = Math.max(0, game.status.inning - (game.status.isTop ? 1 : 0));
     const totalPO = completedInnings * 3 + (game.status.isTop && teamKey === 'away' ? game.status.outs : (!game.status.isTop && teamKey === 'home' ? game.status.outs : 0));
     const formula2Sum = totalR + line.lobs + totalPO;

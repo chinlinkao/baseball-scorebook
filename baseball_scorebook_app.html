@@ -39,7 +39,6 @@
       line-height: 1.4;
     }
 
-    /* 頂部固定控制列 */
     header {
       background: #0f172a;
       color: white;
@@ -109,7 +108,6 @@
     .tool-btn:hover { background: #475569; }
     .tool-btn.active { background: var(--primary); border-color: var(--primary); }
 
-    /* 主容器 */
     .app-container {
       max-width: 1440px;
       margin: 0 auto;
@@ -118,7 +116,6 @@
       box-sizing: border-box;
     }
 
-    /* 電腦 / 平板螢幕：點選手機模式時顯示模擬手機外框 */
     @media (min-width: 768px) {
       .app-container.mode-mobile {
         max-width: 430px;
@@ -131,7 +128,6 @@
       }
     }
 
-    /* 真實手機螢幕 (<768px)：100% 滿版，解決 HEADER 與按鈕裁切 */
     @media (max-width: 767px) {
       .app-container, .app-container.mode-mobile {
         max-width: 100% !important;
@@ -161,7 +157,6 @@
       }
     }
 
-    /* iPad 橫向雙欄佈局 */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -169,7 +164,6 @@
       width: 100%;
     }
 
-    /* 關鍵修復：網格子元素必須 min-width: 0，防止 900px 表格撐爆全頁寬度 */
     .dashboard-grid > div {
       min-width: 0;
       width: 100%;
@@ -183,7 +177,6 @@
       }
     }
 
-    /* 頂部即時比分與球數燈 (Scoreboard) */
     .scoreboard-banner {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: white;
@@ -239,7 +232,6 @@
       color: #94a3b8;
     }
 
-    /* 球數指示燈 */
     .count-indicators {
       display: flex;
       flex-direction: column;
@@ -272,7 +264,6 @@
     .lamp.strike.active { background: #eab308; box-shadow: 0 0 6px #eab308; }
     .lamp.out.active { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
 
-    /* 通用卡片容器 */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -299,7 +290,6 @@
       gap: 6px;
     }
 
-    /* 當前對決與壘包狀態卡片 */
     .matchup-container {
       display: flex;
       justify-content: space-between;
@@ -349,7 +339,6 @@
       font-weight: 600;
     }
 
-    /* 壘包動態圖 */
     .diamond-display {
       width: 65px;
       height: 65px;
@@ -378,7 +367,6 @@
     .base-node.node-2b { top: 2px; left: 26px; }
     .base-node.node-3b { bottom: 26px; left: 2px; }
 
-    /* 逐球好壞球控制列 (5欄強行平分，絕不溢出) */
     .pitch-strip {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -408,7 +396,6 @@
     .pitch-key.key-strike { color: #d97706; }
     .pitch-key.key-foul { color: #475569; }
 
-    /* 打擊結果快捷鍵盤 (4欄平分) */
     .keypad {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -442,7 +429,6 @@
     .key-btn.walk { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
     .key-btn.out { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
 
-    /* 擊球物理軌跡選擇器 (4欄平分) */
     .traj-selector {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -475,7 +461,6 @@
       box-shadow: 0 0 6px rgba(2, 132, 199, 0.4);
     }
 
-    /* 雙守備方位選擇面板 (5欄嚴格平分，修復右半被切掉問題) */
     .field-dual-box {
       background: #f8fafc;
       border: 1px solid var(--border);
@@ -550,7 +535,6 @@
       align-items: center;
     }
 
-    /* 早稻田數位紙本表格 (Score Matrix) */
     .table-scroll-wrap {
       overflow-x: auto;
       background: white;
@@ -773,7 +757,7 @@
     </div>
 
     <div class="header-tools">
-      <button class="tool-btn" onclick="window.location.href='./lineup_setup.html'" style="background: #e11d48; border-color: #be123c;">
+      <button class="tool-btn" onclick="window.location.href='./index.html'" style="background: #e11d48; border-color: #be123c;">
         ⚙️ 先發名單排定
       </button>
       <button class="tool-btn active" id="btn-view-ipad" onclick="setDeviceView('ipad')">
@@ -810,12 +794,12 @@
       <div class="match-teams">
         <div class="team-cell">
           <span class="name" id="away-name-label">台中小海盜 (客)</span>
-          <span class="runs" id="score-away-text">3</span>
+          <span class="runs" id="score-away-text">0</span>
         </div>
         <div style="font-size: 1.2rem; font-weight: 800; color: #64748b;">:</div>
         <div class="team-cell">
           <span class="name" id="home-name-label">台中獵犬隊 (主)</span>
-          <span class="runs" id="score-home-text">1</span>
+          <span class="runs" id="score-home-text">0</span>
         </div>
       </div>
 
@@ -939,14 +923,14 @@
         <!-- 當前打者卡片 -->
         <div class="matchup-container">
           <div class="batter-profile">
-            <span class="batter-tag" id="profile-order-tag">第 5 棒 ‧ 次打席</span>
+            <span class="batter-tag" id="profile-order-tag">第 1 棒 ‧ 次打席</span>
             <div class="batter-title">
-              <span class="batter-name" id="profile-name">李喆欽</span>
-              <span class="batter-num" id="profile-num">#24</span>
-              <span class="batter-pos" id="profile-pos">3B 三壘</span>
+              <span class="batter-name" id="profile-name">簡亦汛</span>
+              <span class="batter-num" id="profile-num">#9</span>
+              <span class="batter-pos" id="profile-pos">8 中外</span>
             </div>
             <div style="font-size: 0.78rem; color: var(--text-muted);">
-              面對投手：<span id="profile-pitcher-name">#18 黃思學</span>
+              面對投手：<span id="profile-pitcher-name">#19 鄭凱文</span>
             </div>
           </div>
 
@@ -1064,6 +1048,10 @@
           <button class="key-btn out" onclick="openAdvanceModal('FO')">
             飛球接 <span class="sub">F7 / F8</span>
           </button>
+          <button class="key-btn out" onclick="openDoublePlayModal()" style="background: #fef2f2; border-color: #fca5a5; color: #991b1b;">
+            雙殺打 <span class="sub">DP 雙殺</span>
+          </button>
+
           <button class="key-btn walk" onclick="openAdvanceModal('E')">
             失誤 <span class="sub">E</span>
           </button>
@@ -1092,6 +1080,67 @@
       </div>
     </div>
   </main>
+
+  <!-- 雙殺型態選擇彈窗 -->
+  <div class="modal-backdrop" id="doubleplay-dialog" style="display: none;">
+    <div class="modal-box" style="max-width: 420px; max-height: 85vh; overflow-y: auto;">
+      <div class="title">⚾ 選擇雙殺型態 (Double Play)</div>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+        請選擇發生的雙殺守備型態，系統將自動計算打者與跑者出局並繪製早稻田 DP 記號：
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('6-4-3')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">6-4-3 滾地雙殺 (SS ➔ 2B ➔ 1B)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">游擊手傳二壘封殺一壘跑者，二壘手轉傳一壘封殺打者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('4-6-3')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">4-6-3 滾地雙殺 (2B ➔ SS ➔ 1B)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">二壘手傳游擊封殺一壘跑者，游擊手轉傳一壘封殺打者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('5-4-3')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">5-4-3 滾地雙殺 (3B ➔ 2B ➔ 1B)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">三壘手傳二壘封殺一壘跑者，二壘手轉傳一壘封殺打者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('1-6-3')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">1-6-3 投手滾地雙殺 (P ➔ SS ➔ 1B)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">投手接球傳二壘封殺一壘跑者，轉傳一壘封殺打者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('3-6-3')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">3-6-3 一壘滾地雙殺 (1B ➔ SS ➔ 1B)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">一壘手接球傳二壘封殺一壘跑者，游擊手轉傳一壘刺殺打者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('1-2-3')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">1-2-3 本壘強迫雙殺 (P ➔ C ➔ 1B)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">滿壘/三壘有人，投手傳本壘封殺三壘跑者，捕手轉傳一壘</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('L6-6')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">L6-6 / L4-4 平飛雙殺 (Line Drive DP)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">內野平飛球遭接殺，傳壘/自踩刺殺回壘不及之跑者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('F9-2')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">F9-2 / F7-2 外野高飛雙殺 (Flyout + Home Out)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">外野高飛球遭接殺，外野手長傳本壘刺殺搶攻跑者</div>
+        </button>
+
+        <button class="btn-act secondary" style="padding: 10px; text-align: left;" onclick="confirmDPType('K+CS')">
+          <strong style="color: #991b1b; font-size: 0.95rem;">K + CS 三振盜壘雙殺 (Strikeout + CS)</strong>
+          <div style="font-size: 0.75rem; color: #64748b;">打者遭三振出局，捕手傳壘阻殺發動盜壘之跑者</div>
+        </button>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 14px;">
+        <button class="btn-act secondary" onclick="closeDoublePlayModal()">取消</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 三振類型選擇彈窗 -->
   <div class="modal-backdrop" id="strikeout-dialog" style="display: none;">
@@ -1170,6 +1219,7 @@
     let selectedFieldPos = 8;
     let pendingPlay = null;
     let activeScorebookTab = 'away';
+    let historySnapshots = [];
 
     window.addEventListener('DOMContentLoaded', () => {
       initFullGame();
@@ -1181,90 +1231,118 @@
     });
 
     function initFullGame() {
+      let awayStarters = [];
+      let homeStarters = [];
+
       const savedSetupStr = localStorage.getItem('baseball_game_setup');
       if (savedSetupStr) {
         try {
           const setup = JSON.parse(savedSetupStr);
-          currentGame = BaseballEngine.createNewGame({
-            title: setup.meta?.title || "2026年台中市棒球聯賽",
-            date: setup.meta?.date,
-            field: setup.meta?.field,
-            umpire: setup.meta?.umpire,
-            scorer: setup.meta?.scorer,
-            awayName: setup.away?.name || "台中小海盜大叔隊",
-            awayLineup: setup.away?.lineup || [],
-            awayPitchers: [{ name: setup.away?.pitcher?.name || "黃思學", number: setup.away?.pitcher?.number || "18", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }],
-            homeName: setup.home?.name || "台中獵犬棒球隊",
-            homeLineup: setup.home?.lineup || [],
-            homePitchers: [{ name: setup.home?.pitcher?.name || "鄭凱文", number: setup.home?.pitcher?.number || "19", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }]
-          });
-
-          document.getElementById('away-name-label').textContent = `${setup.away.name} (客)`;
-          document.getElementById('home-name-label').textContent = `${setup.home.name} (主)`;
-          document.getElementById('btn-tab-away').textContent = `先攻 (${setup.away.name.slice(0, 4)})`;
-          document.getElementById('btn-tab-home').textContent = `後攻 (${setup.home.name.slice(0, 4)})`;
-
-          return;
+          awayStarters = setup.away?.lineup || [];
+          homeStarters = setup.home?.lineup || [];
         } catch (e) {
-          console.error("載入賽前名單失敗，退回預設示範陣容:", e);
+          console.error("載入賽前名單失敗，退回預設陣容:", e);
         }
       }
 
-      const awayStarters = PIRATES_ROSTER.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder).map((p, idx) => ({
-        ...p,
-        order: idx + 1,
-        pos: p.defaultPos
-      }));
+      if (awayStarters.length === 0) {
+        awayStarters = PIRATES_ROSTER.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder).map((p, idx) => ({
+          ...p,
+          order: idx + 1,
+          pos: p.defaultPos
+        }));
+      }
 
-      const homeStarters = [
-        { order: 1, number: "7",  name: "張志豪", pos: "8" },
-        { order: 2, number: "9",  name: "王威晨", pos: "5" },
-        { order: 3, number: "39", name: "詹子賢", pos: "7" },
-        { order: 4, number: "25", name: "許基宏", pos: "3" },
-        { order: 5, number: "90", name: "江坤宇", pos: "6" },
-        { order: 6, number: "4",  name: "陳文杰", pos: "9" },
-        { order: 7, number: "74", name: "許躍騰", pos: "2" },
-        { order: 8, number: "66", name: "黃韋盛", pos: "4" },
-        { order: 9, number: "19", name: "鄭凱文", pos: "1" }
-      ];
+      if (homeStarters.length === 0) {
+        homeStarters = [
+          { order: 1, number: "7",  name: "張志豪", pos: "8" },
+          { order: 2, number: "9",  name: "王威晨", pos: "5" },
+          { order: 3, number: "39", name: "詹子賢", pos: "7" },
+          { order: 4, number: "25", name: "許基宏", pos: "3" },
+          { order: 5, number: "90", name: "江坤宇", pos: "6" },
+          { order: 6, number: "4",  name: "陳文杰", pos: "9" },
+          { order: 7, number: "74", name: "許躍騰", pos: "2" },
+          { order: 8, number: "66", name: "黃韋盛", pos: "4" },
+          { order: 9, number: "19", name: "鄭凱文", pos: "1" }
+        ];
+      }
 
       currentGame = BaseballEngine.createNewGame({
         title: "2026年台中市棒球聯賽",
         awayName: "台中小海盜大叔隊",
         awayLineup: awayStarters,
-        awayPitchers: [{ name: "黃思學", number: "18", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }],
+        awayPitchers: [{ name: "黃思學", number: "18" }],
         homeName: "台中獵犬棒球隊",
         homeLineup: homeStarters,
-        homePitchers: [{ name: "鄭凱文", number: "19", ip: 0, np: 0, h: 0, r: 0, er: 0, so: 0, bb: 0 }]
+        homePitchers: [{ name: "鄭凱文", number: "19" }]
       });
 
-      loadInitialShowcasePlays();
+      // 初始化打序 Slot（支援同棒次新增代打列）
+      currentGame.teams.away.orderSlots = awayStarters.map((p, idx) => [{
+        ...p,
+        order: idx + 1,
+        isSub: false,
+        playerKey: `away_order${idx}_sub0`
+      }]);
+      currentGame.teams.away.lineup = currentGame.teams.away.orderSlots.map(slot => slot[0]);
+
+      currentGame.teams.home.orderSlots = homeStarters.map((p, idx) => [{
+        ...p,
+        order: idx + 1,
+        isSub: false,
+        playerKey: `home_order${idx}_sub0`
+      }]);
+      currentGame.teams.home.lineup = currentGame.teams.home.orderSlots.map(slot => slot[0]);
+
+      // 初始化增強型打席矩陣（支援單局多打席陣列）
+      currentGame.enhancedMatrix = { away: {}, home: {} };
     }
 
-    function loadInitialShowcasePlays() {
-      BaseballEngine.recordPlay(currentGame, {
-        resultType: 'BB',
-        advances: { batter: '1B' }
+    function saveEnhancedSnapshot() {
+      const snap = JSON.stringify({
+        status: currentGame.status,
+        lineScore: currentGame.lineScore,
+        scoreMatrix: currentGame.scoreMatrix,
+        pbpEvents: currentGame.pbpEvents,
+        enhancedMatrix: currentGame.enhancedMatrix,
+        awayOrderSlots: currentGame.teams.away.orderSlots,
+        homeOrderSlots: currentGame.teams.home.orderSlots,
+        awayLineup: currentGame.teams.away.lineup,
+        homeLineup: currentGame.teams.home.lineup
       });
-      BaseballEngine.recordPlay(currentGame, {
-        resultType: 'SAC',
-        fieldCode: '1-3',
-        advances: { batter: 'OUT', runners: { 1: 'ADV_2' } }
-      });
-      BaseballEngine.recordPlay(currentGame, {
-        resultType: '1B',
-        direction: 8,
-        trajectory: 'line',
-        fieldCode: '1B 8',
-        advances: { batter: '1B', runners: { 2: 'SCORE' } }
-      });
-      BaseballEngine.recordPlay(currentGame, {
-        resultType: 'HR',
-        direction: 7,
-        trajectory: 'fly',
-        fieldCode: 'HR 7',
-        advances: { batter: 'HR', runners: { 1: 'SCORE' } }
-      });
+      historySnapshots.push(snap);
+      if (historySnapshots.length > 20) historySnapshots.shift();
+    }
+
+    function recordPlayWithEnhancedMatrix(playPayload) {
+      saveEnhancedSnapshot();
+
+      const s = currentGame.status;
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const team = currentGame.teams[battingTeamKey];
+      const slot = team.orderSlots[orderIdx];
+      const activePlayer = slot[slot.length - 1];
+
+      team.lineup[orderIdx] = activePlayer;
+      const innBefore = s.inning;
+
+      const res = BaseballEngine.recordPlay(currentGame, playPayload);
+
+      const cellData = currentGame.scoreMatrix[battingTeamKey][orderIdx][innBefore];
+
+      if (!currentGame.enhancedMatrix) currentGame.enhancedMatrix = { away: {}, home: {} };
+      if (!currentGame.enhancedMatrix[battingTeamKey]) currentGame.enhancedMatrix[battingTeamKey] = {};
+      if (!currentGame.enhancedMatrix[battingTeamKey][activePlayer.playerKey]) {
+        currentGame.enhancedMatrix[battingTeamKey][activePlayer.playerKey] = {};
+      }
+      if (!currentGame.enhancedMatrix[battingTeamKey][activePlayer.playerKey][innBefore]) {
+        currentGame.enhancedMatrix[battingTeamKey][activePlayer.playerKey][innBefore] = [];
+      }
+
+      currentGame.enhancedMatrix[battingTeamKey][activePlayer.playerKey][innBefore].push(JSON.parse(JSON.stringify(cellData)));
+
+      return res;
     }
 
     function setDeviceView(mode) {
@@ -1439,6 +1517,91 @@
       refreshDashboard();
     }
 
+    function openDoublePlayModal() {
+      if (currentGame.status.outs >= 2) {
+        alert("目前已有 2 出局，無法形成雙殺守備（雙殺需小於 2 出局）。");
+        return;
+      }
+      document.getElementById('doubleplay-dialog').style.display = 'flex';
+    }
+
+    function closeDoublePlayModal() {
+      document.getElementById('doubleplay-dialog').style.display = 'none';
+    }
+
+    function confirmDPType(dpType) {
+      closeDoublePlayModal();
+
+      let fieldCode = dpType;
+      let trajectory = 'ground';
+      let outRunnerBase = 1;
+      let runnerCode = '6-4';
+
+      if (dpType === '6-4-3') { fieldCode = '6-4-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '6-4'; }
+      else if (dpType === '4-6-3') { fieldCode = '4-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '4-6'; }
+      else if (dpType === '5-4-3') { fieldCode = '5-4-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '5-4'; }
+      else if (dpType === '1-6-3') { fieldCode = '1-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '1-6'; }
+      else if (dpType === '3-6-3') { fieldCode = '3-6-3'; trajectory = 'ground'; outRunnerBase = 1; runnerCode = '3-6'; }
+      else if (dpType === '1-2-3') { fieldCode = '1-2-3'; trajectory = 'ground'; outRunnerBase = currentGame.status.bases[3] ? 3 : 1; runnerCode = '1-2'; }
+      else if (dpType === 'L6-6') { fieldCode = 'F6'; trajectory = 'line'; outRunnerBase = 1; runnerCode = '6'; }
+      else if (dpType === 'F9-2') { fieldCode = 'F9'; trajectory = 'fly'; outRunnerBase = currentGame.status.bases[3] ? 3 : 1; runnerCode = '9-2'; }
+      else if (dpType === 'K+CS') { fieldCode = 'K'; trajectory = 'none'; outRunnerBase = 1; runnerCode = 'CS 2-4'; }
+
+      pendingPlay = {
+        resultType: 'DP',
+        isDoublePlay: true,
+        dpType: dpType,
+        trajectory: trajectory,
+        fieldCode: fieldCode,
+        runnerFieldCodes: {
+          [outRunnerBase]: runnerCode
+        }
+      };
+
+      openAdvanceModalForDP(pendingPlay, outRunnerBase);
+    }
+
+    function openAdvanceModalForDP(play, outRunnerBase) {
+      const s = currentGame.status;
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
+
+      document.getElementById('adv-dialog-title').textContent = `${batter.name} (#${batter.number}) ─ 雙殺守備 [${play.fieldCode}]`;
+      const container = document.getElementById('adv-dialog-rows');
+
+      let rowsHtml = `
+        <div class="runner-row">
+          <span>打者 (${batter.name})：</span>
+          <select class="select-input" id="adv-select-batter">
+            <option value="OUT" selected>雙殺出局</option>
+          </select>
+        </div>
+      `;
+
+      [3, 2, 1].forEach(b => {
+        const runner = s.bases[b];
+        if (runner) {
+          const isAutoOut = (b === outRunnerBase);
+          rowsHtml += `
+            <div class="runner-row">
+              <span>${b}壘跑者 (${runner.player.name})：</span>
+              <select class="select-input" id="adv-select-runner-${b}">
+                <option value="OUT" ${isAutoOut ? 'selected' : ''}>封殺/刺殺出局</option>
+                <option value="STAY" ${!isAutoOut ? 'selected' : ''}>留原壘</option>
+                <option value="ADV_2">推進二壘</option>
+                <option value="ADV_3">推進三壘</option>
+                <option value="SCORE">跑回本壘得分</option>
+              </select>
+            </div>
+          `;
+        }
+      });
+
+      container.innerHTML = rowsHtml;
+      document.getElementById('advance-dialog').style.display = 'flex';
+    }
+
     function openAdvanceModal(resultType) {
       const s = currentGame.status;
       const battingTeamKey = s.isTop ? 'away' : 'home';
@@ -1534,7 +1697,7 @@
         runners: runnersAdv
       };
 
-      const playRes = BaseballEngine.recordPlay(currentGame, pendingPlay);
+      const playRes = recordPlayWithEnhancedMatrix(pendingPlay);
 
       if (playRes && playRes.inningChanged) {
         activeScorebookTab = currentGame.status.isTop ? 'away' : 'home';
@@ -1580,52 +1743,67 @@
     function renderScorebookMatrix() {
       const teamKey = activeScorebookTab;
       const team = currentGame.teams[teamKey];
-      const matrix = currentGame.scoreMatrix[teamKey] || {};
+      const orderSlots = team.orderSlots || [];
+      const matrix = (currentGame.enhancedMatrix && currentGame.enhancedMatrix[teamKey]) || {};
       const tbody = document.getElementById('matrix-tbody');
 
       let html = '';
 
-      team.lineup.forEach((player, pIdx) => {
-        let cellsHtml = '';
-        let pPA = 0, pAB = 0, pH = 0, pR = 0, pRBI = 0, pBB = 0;
+      orderSlots.forEach((slot, orderIdx) => {
+        slot.forEach((player, subIdx) => {
+          let cellsHtml = '';
+          let pPA = 0, pAB = 0, pH = 0, pR = 0, pRBI = 0, pBB = 0;
 
-        for (let inn = 1; inn <= 7; inn++) {
-          const cell = matrix[pIdx] && matrix[pIdx][inn];
-          if (cell) {
-            pPA++;
-            const svg = WasedaScoreGrid.renderSVG(cell, { size: 90 });
-            cellsHtml += `<td>${svg}</td>`;
+          for (let inn = 1; inn <= 7; inn++) {
+            const cellArr = matrix[player.playerKey]?.[inn] || [];
+            if (cellArr.length > 0) {
+              let svgInner = '';
+              if (cellArr.length === 1) {
+                svgInner = WasedaScoreGrid.renderSVG(cellArr[0], { size: 85 });
+              } else {
+                svgInner = `<div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px;">` +
+                  cellArr.map(cell => WasedaScoreGrid.renderSVG(cell, { size: 85 })).join('') +
+                  `</div>`;
+              }
+              cellsHtml += `<td>${svgInner}</td>`;
 
-            const nots = cell.notations || {};
-            const first = nots.first ? nots.first.text : '';
-            const isSac = nots.first && nots.first.isSacrifice;
-            if (cell.center && cell.center.isRun) pR++;
-            if (first.includes('BB') || first.includes('HBP')) pBB++;
-            else if (!isSac) pAB++;
-            if (first.includes('1B') || first.includes('2B') || first.includes('3B') || first.includes('HR')) pH++;
-            if (nots.home && nots.home.rbi) pRBI += nots.home.rbi;
-          } else {
-            cellsHtml += `<td style="color: #cbd5e1; font-size: 0.75rem;">—</td>`;
+              cellArr.forEach(cell => {
+                pPA++;
+                const nots = cell.notations || {};
+                const first = nots.first ? nots.first.text : '';
+                const isSac = nots.first && nots.first.isSacrifice;
+                if (cell.center && cell.center.isRun) pR++;
+                if (first.includes('BB') || first.includes('HBP')) pBB++;
+                else if (!isSac) pAB++;
+                if (first.includes('1B') || first.includes('2B') || first.includes('3B') || first.includes('HR')) pH++;
+                if (nots.home && nots.home.rbi) pRBI += nots.home.rbi;
+              });
+            } else {
+              cellsHtml += `<td style="color: #cbd5e1; font-size: 0.75rem;">—</td>`;
+            }
           }
-        }
 
-        html += `
-          <tr>
-            <td style="font-weight: 800; background: #f8fafc;">${player.order}</td>
-            <td style="font-weight: 700; font-size: 0.8rem;">${player.pos}</td>
-            <td class="player-title-col">
-              <div class="name">${player.name}</div>
-              <div class="meta">#${player.number} ‧ ${getPosChinese(player.pos)}</div>
-            </td>
-            ${cellsHtml}
-            <td class="stat-num">${pPA}</td>
-            <td class="stat-num">${pAB}</td>
-            <td class="stat-num" style="color: var(--primary);">${pH}</td>
-            <td class="stat-num" style="color: var(--accent-red);">${pR}</td>
-            <td class="stat-num">${pRBI}</td>
-            <td class="stat-num">${pBB}</td>
-          </tr>
-        `;
+          const orderDisplay = (subIdx === 0) ? player.order : '<span style="font-size:0.75rem; color:#e11d48; font-weight:800;">代</span>';
+          const rowBg = player.isSub ? '#fff1f2' : '#ffffff';
+
+          html += `
+            <tr style="background: ${rowBg};">
+              <td style="font-weight: 800; background: #f8fafc; text-align: center;">${orderDisplay}</td>
+              <td style="font-weight: 700; font-size: 0.78rem; text-align: center;">${player.pos}</td>
+              <td class="player-title-col">
+                <div class="name">${player.name}</div>
+                <div class="meta">#${player.number} ‧ ${getPosChinese(player.pos)}</div>
+              </td>
+              ${cellsHtml}
+              <td class="stat-num">${pPA}</td>
+              <td class="stat-num">${pAB}</td>
+              <td class="stat-num" style="color: var(--primary);">${pH}</td>
+              <td class="stat-num" style="color: var(--accent-red);">${pR}</td>
+              <td class="stat-num">${pRBI}</td>
+              <td class="stat-num">${pBB}</td>
+            </tr>
+          `;
+        });
       });
 
       tbody.innerHTML = html;
@@ -1646,39 +1824,41 @@
       `;
     }
 
+    function formatIP(outs) {
+      const o = outs || 0;
+      return `${Math.floor(o / 3)}.${o % 3}`;
+    }
+
     function renderPitcherTable() {
       const tbody = document.getElementById('pitcher-tbody');
-      const pitcherAway = currentGame.teams.away.pitchers[0];
-      const pitcherHome = currentGame.teams.home.pitchers[0];
+      if (!tbody || !currentGame) return;
 
-      tbody.innerHTML = `
-        <tr>
-          <td style="font-weight: 700;">#${pitcherAway.number} ${pitcherAway.name} (小海盜)</td>
-          <td>勝</td>
-          <td>1.0</td>
-          <td>14</td>
-          <td>4</td>
-          <td>1</td>
-          <td>0</td>
-          <td>1</td>
-          <td>0</td>
-          <td>1</td>
-          <td>1</td>
-        </tr>
-        <tr>
-          <td style="font-weight: 700;">#${pitcherHome.number} ${pitcherHome.name} (獵犬隊)</td>
-          <td>敗</td>
-          <td>1.0</td>
-          <td>22</td>
-          <td>5</td>
-          <td>2</td>
-          <td>1</td>
-          <td>0</td>
-          <td>1</td>
-          <td>3</td>
-          <td>3</td>
-        </tr>
-      `;
+      const awayPitchers = currentGame.teams.away.pitchers || [];
+      const homePitchers = currentGame.teams.home.pitchers || [];
+
+      const renderRows = (pitchers, teamLabel) => {
+        return pitchers.map(p => `
+          <tr>
+            <td style="font-weight: 700;">#${p.number || ''} ${p.name || '投手'} (${teamLabel})</td>
+            <td>${p.winLoss || '-'}</td>
+            <td>${formatIP(p.outs)}</td>
+            <td>${p.np || 0}</td>
+            <td>${p.bf || 0}</td>
+            <td>${p.h || 0}</td>
+            <td>${p.hr || 0}</td>
+            <td>${p.so || 0}</td>
+            <td>${p.bb || 0}</td>
+            <td>${p.r || 0}</td>
+            <td>${p.er || 0}</td>
+          </tr>
+        `).join('');
+      };
+
+      let html = '';
+      html += renderRows(awayPitchers, '小海盜');
+      html += renderRows(homePitchers, '獵犬隊');
+
+      tbody.innerHTML = html;
     }
 
     function renderPBPFeed() {
@@ -1691,23 +1871,58 @@
     }
 
     function checkBalances() {
-      const check = BaseballEngine.checkGameBalance(currentGame, activeScorebookTab);
+      const teamKey = activeScorebookTab;
+      const matrix = currentGame.enhancedMatrix ? currentGame.enhancedMatrix[teamKey] : {};
+
+      let totalPA = 0, totalAB = 0, totalBB = 0, totalHBP = 0, totalSH = 0, totalSF = 0;
+      let totalR = 0;
+
+      Object.keys(matrix).forEach(pKey => {
+        const innObj = matrix[pKey];
+        Object.keys(innObj).forEach(inn => {
+          const cellArr = innObj[inn] || [];
+          cellArr.forEach(cell => {
+            totalPA++;
+            const notations = cell.notations || {};
+            const firstText = notations.first ? notations.first.text : '';
+            const isSac = notations.first && notations.first.isSacrifice;
+            const center = cell.center || {};
+
+            if (center.isRun) totalR++;
+            if (firstText.includes('BB')) totalBB++;
+            else if (firstText.includes('HBP')) totalHBP++;
+            else if (isSac) totalSH++;
+            else if (firstText.includes('SF')) totalSF++;
+            else totalAB++;
+          });
+        });
+      });
+
+      const formula1Sum = totalAB + totalBB + totalHBP + totalSH + totalSF;
+      const isFormula1Balanced = (totalPA === formula1Sum);
+
+      const line = (teamKey === 'away') ? currentGame.lineScore.away : currentGame.lineScore.home;
+      const completedInnings = Math.max(0, currentGame.status.inning - (currentGame.status.isTop ? 1 : 0));
+      const totalPO = completedInnings * 3 + (currentGame.status.isTop && teamKey === 'away' ? currentGame.status.outs : (!currentGame.status.isTop && teamKey === 'home' ? currentGame.status.outs : 0));
+      const formula2Sum = totalR + line.lobs + totalPO;
+      const isFormula2Balanced = (totalPA === formula2Sum);
+
       const b1 = document.getElementById('balance-badge-1');
       const b2 = document.getElementById('balance-badge-2');
 
-      if (check.formula1.isBalanced) {
-        b1.innerHTML = `✔ 打席平衡：PA(${check.totalPA}) = AB(${check.totalAB}) + BB(${check.totalBB}) + HBP(${check.totalHBP}) + SH(${check.totalSH}) + SF(${check.totalSF}) (帳目一致)`;
+      if (isFormula1Balanced) {
+        b1.innerHTML = `✔ 打席平衡：PA(${totalPA}) = AB(${totalAB}) + BB(${totalBB}) + HBP(${totalHBP}) + SH(${totalSH}) + SF(${totalSF}) (帳目一致)`;
         b1.style.color = 'var(--accent-green)';
       } else {
-        b1.innerHTML = `⚠ 打席不平衡：PA(${check.totalPA}) ≠ 等式(${check.formula1.sum})`;
+        b1.innerHTML = `⚠ 打席不平衡：PA(${totalPA}) ≠ 等式(${formula1Sum})`;
         b1.style.color = 'var(--accent-red)';
       }
 
-      if (check.formula2.isBalanced) {
-        b2.innerHTML = `✔ 局況平衡：PA(${check.totalPA}) = 得分(${check.totalR}) + 殘壘(${check.formula2.lobs}) + 出局(${check.formula2.po}) (帳目一致)`;
+      if (isFormula2Balanced) {
+        b2.innerHTML = `✔ 局況平衡：PA(${totalPA}) = 得分(${totalR}) + 殘壘(${line.lobs}) + 出局(${totalPO}) (帳目一致)`;
         b2.style.color = 'var(--accent-green)';
       } else {
-        b2.innerHTML = `⚠ 局況不平衡：PA(${check.totalPA}) ≠ 等式(${check.formula2.sum})`;
+        b2.innerHTML = `⚠ 局況不平衡：PA(${totalPA}) ≠ 等式(${formula2Sum})`;
         b2.style.color = 'var(--accent-red)';
       }
     }
@@ -1724,7 +1939,18 @@
     }
 
     function undoAction() {
-      if (BaseballEngine.undoLastAction(currentGame)) {
+      if (historySnapshots.length > 0) {
+        const snap = JSON.parse(historySnapshots.pop());
+        currentGame.status = snap.status;
+        currentGame.lineScore = snap.lineScore;
+        currentGame.scoreMatrix = snap.scoreMatrix;
+        currentGame.pbpEvents = snap.pbpEvents;
+        currentGame.enhancedMatrix = snap.enhancedMatrix;
+        currentGame.teams.away.orderSlots = snap.awayOrderSlots;
+        currentGame.teams.home.orderSlots = snap.homeOrderSlots;
+        currentGame.teams.away.lineup = snap.awayLineup;
+        currentGame.teams.home.lineup = snap.homeLineup;
+
         refreshDashboard();
         renderScorebookMatrix();
         renderPitcherTable();
@@ -1789,20 +2015,38 @@
 
     function substituteBatter(name, number) {
       const s = currentGame.status;
+      const battingTeamKey = s.isTop ? 'away' : 'home';
       const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
-      currentGame.teams.away.lineup[orderIdx].name = name;
-      currentGame.teams.away.lineup[orderIdx].number = number;
+      const team = currentGame.teams[battingTeamKey];
+
+      if (!team.orderSlots) return;
+
+      const slot = team.orderSlots[orderIdx];
+      const subIdx = slot.length;
+      const newSubPlayer = {
+        id: "P_SUB_" + Date.now(),
+        number: number,
+        name: name,
+        pos: "代",
+        order: orderIdx + 1,
+        isSub: true,
+        playerKey: `${battingTeamKey}_order${orderIdx}_sub${subIdx}`
+      };
+
+      slot.push(newSubPlayer);
+      team.lineup[orderIdx] = newSubPlayer;
+
       closeRosterDialog();
       refreshDashboard();
       renderScorebookMatrix();
-      alert(`已將第 ${orderIdx + 1} 棒更換為代打 #${number} ${name}！`);
+      alert(`已在第 ${orderIdx + 1} 棒原打者下方新增代打資料列：#${number} ${name}！`);
     }
 
     function getPosChinese(pos) {
       const map = {
         '1': '投手 P', '2': '捕手 C', '3': '一壘 1B', '4': '二壘 2B',
         '5': '三壘 3B', '6': '游擊 SS', '7': '左外 LF', '8': '中外 CF', '9': '右外 RF',
-        'DH': '指打 DH', 'BN': '板凳 BN'
+        'DH': '指打 DH', 'BN': '板凳 BN', '代': '代打 PH'
       };
       return map[pos] || pos;
     }
