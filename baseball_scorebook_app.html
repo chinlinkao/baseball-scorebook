@@ -26,20 +26,24 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.4;
-      overflow-x: hidden;
-      width: 100%;
     }
 
     /* 頂部固定控制列 */
     header {
       background: #0f172a;
       color: white;
-      padding: 10px 16px;
+      padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -53,41 +57,45 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .header-left h1 {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 800;
       letter-spacing: 0.5px;
       white-space: nowrap;
+      word-break: keep-all;
     }
 
     .header-badge {
       background: var(--accent-red);
       color: white;
-      font-size: 0.72rem;
-      padding: 2px 8px;
+      font-size: 0.7rem;
+      padding: 2px 6px;
       border-radius: 10px;
       font-weight: 700;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .header-tools {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .tool-btn {
       background: #334155;
       color: #f1f5f9;
       border: 1px solid #475569;
-      padding: 6px 10px;
+      padding: 5px 8px;
       border-radius: 6px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
@@ -105,8 +113,9 @@
     .app-container {
       max-width: 1440px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 10px;
       width: 100%;
+      box-sizing: border-box;
     }
 
     /* 電腦 / 平板螢幕：點選手機模式時顯示模擬手機外框 */
@@ -122,7 +131,7 @@
       }
     }
 
-    /* 真實手機螢幕 (<768px)：滿版顯示並修復 Header 與網格溢出問題 */
+    /* 真實手機螢幕 (<768px)：100% 滿版，解決 HEADER 與按鈕裁切 */
     @media (max-width: 767px) {
       .app-container, .app-container.mode-mobile {
         max-width: 100% !important;
@@ -137,7 +146,7 @@
         padding: 8px 10px;
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
+        gap: 6px;
       }
 
       .header-left {
@@ -148,19 +157,7 @@
       .header-tools {
         width: 100%;
         justify-content: flex-start;
-        overflow-x: auto;
-        gap: 6px;
         padding-bottom: 2px;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .tool-btn {
-        padding: 5px 8px;
-        font-size: 0.75rem;
-      }
-
-      .card {
-        padding: 10px 8px;
       }
     }
 
@@ -168,8 +165,15 @@
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 14px;
+      gap: 12px;
       width: 100%;
+    }
+
+    /* 關鍵修復：網格子元素必須 min-width: 0，防止 900px 表格撐爆全頁寬度 */
+    .dashboard-grid > div {
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     @media (min-width: 1024px) {
@@ -184,8 +188,8 @@
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: white;
       border-radius: var(--radius);
-      padding: 10px 14px;
-      margin-bottom: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -196,7 +200,7 @@
     .match-teams {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .team-cell {
@@ -205,33 +209,33 @@
     }
 
     .team-cell .name {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: #94a3b8;
       font-weight: 600;
     }
 
     .team-cell .runs {
-      font-size: 1.8rem;
+      font-size: 1.7rem;
       font-weight: 800;
       line-height: 1;
     }
 
     .inning-pill {
       background: #334155;
-      padding: 5px 10px;
+      padding: 5px 8px;
       border-radius: 8px;
       text-align: center;
       cursor: pointer;
     }
 
     .inning-pill .inn-text {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 800;
       color: #f8fafc;
     }
 
     .inning-pill .inn-sub {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       color: #94a3b8;
     }
 
@@ -245,7 +249,7 @@
     .count-row {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
     }
 
     .count-label {
@@ -256,25 +260,25 @@
     }
 
     .lamp {
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: #334155;
       display: inline-block;
       transition: all 0.2s;
     }
 
-    .lamp.ball.active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
-    .lamp.strike.active { background: #eab308; box-shadow: 0 0 8px #eab308; }
-    .lamp.out.active { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .lamp.ball.active { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .lamp.strike.active { background: #eab308; box-shadow: 0 0 6px #eab308; }
+    .lamp.out.active { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
 
     /* 通用卡片容器 */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 12px;
-      margin-bottom: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.03);
       width: 100%;
     }
@@ -287,7 +291,7 @@
     }
 
     .card-title {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
       color: var(--text);
       display: flex;
@@ -303,8 +307,8 @@
       background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 10px 12px;
-      margin-bottom: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
       width: 100%;
     }
 
@@ -314,7 +318,7 @@
     }
 
     .batter-tag {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       color: var(--primary);
     }
@@ -327,35 +331,35 @@
     }
 
     .batter-name {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 800;
     }
 
     .batter-num {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 800;
       color: var(--accent-red);
     }
 
     .batter-pos {
       background: #e2e8f0;
-      font-size: 0.75rem;
-      padding: 2px 6px;
+      font-size: 0.72rem;
+      padding: 2px 5px;
       border-radius: 4px;
       font-weight: 600;
     }
 
     /* 壘包動態圖 */
     .diamond-display {
-      width: 70px;
-      height: 70px;
+      width: 65px;
+      height: 65px;
       position: relative;
       flex-shrink: 0;
     }
 
     .base-node {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       border: 2px solid #94a3b8;
       background: white;
       position: absolute;
@@ -366,30 +370,30 @@
     .base-node.occupied {
       background: #e11d48;
       border-color: #be123c;
-      box-shadow: 0 0 8px rgba(225, 29, 72, 0.7);
+      box-shadow: 0 0 6px rgba(225, 29, 72, 0.7);
     }
 
-    .base-node.node-home { bottom: 2px; left: 28px; }
-    .base-node.node-1b { bottom: 28px; right: 2px; }
-    .base-node.node-2b { top: 2px; left: 28px; }
-    .base-node.node-3b { bottom: 28px; left: 2px; }
+    .base-node.node-home { bottom: 2px; left: 26px; }
+    .base-node.node-1b { bottom: 26px; right: 2px; }
+    .base-node.node-2b { top: 2px; left: 26px; }
+    .base-node.node-3b { bottom: 26px; left: 2px; }
 
-    /* 逐球好壞球控制列 (強制 5 欄平分，不超出螢幕) */
+    /* 逐球好壞球控制列 (5欄強行平分，絕不溢出) */
     .pitch-strip {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 4px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       width: 100%;
     }
 
     .pitch-key {
       min-width: 0;
-      padding: 8px 2px;
+      padding: 8px 1px;
       border: 1px solid var(--border);
       background: white;
-      border-radius: 8px;
-      font-size: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
@@ -404,23 +408,23 @@
     .pitch-key.key-strike { color: #d97706; }
     .pitch-key.key-foul { color: #475569; }
 
-    /* 打擊結果快捷鍵盤 (4 欄平分) */
+    /* 打擊結果快捷鍵盤 (4欄平分) */
     .keypad {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 6px;
-      margin-bottom: 12px;
+      gap: 5px;
+      margin-bottom: 10px;
       width: 100%;
     }
 
     .key-btn {
       min-width: 0;
-      padding: 10px 2px;
+      padding: 9px 2px;
       border: 1px solid var(--border);
       background: white;
       border-radius: 8px;
       font-weight: 800;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -432,28 +436,28 @@
     }
 
     .key-btn:active { transform: scale(0.96); }
-    .key-btn span.sub { font-size: 0.62rem; font-weight: 600; color: var(--text-muted); }
+    .key-btn span.sub { font-size: 0.6rem; font-weight: 600; color: var(--text-muted); }
 
     .key-btn.hit { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
     .key-btn.walk { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
     .key-btn.out { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
 
-    /* 擊球物理軌跡選擇器 (4 欄平分) */
+    /* 擊球物理軌跡選擇器 (4欄平分) */
     .traj-selector {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 4px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       width: 100%;
     }
 
     .traj-btn {
       min-width: 0;
-      padding: 8px 2px;
+      padding: 7px 1px;
       border: 1px solid var(--border);
       background: white;
-      border-radius: 8px;
-      font-size: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
@@ -471,13 +475,13 @@
       box-shadow: 0 0 6px rgba(2, 132, 199, 0.4);
     }
 
-    /* 雙守備方位選擇面板 (5 欄平分，解決右側裁切) */
+    /* 雙守備方位選擇面板 (5欄嚴格平分，修復右半被切掉問題) */
     .field-dual-box {
       background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 10px 8px;
-      margin-bottom: 12px;
+      padding: 8px 6px;
+      margin-bottom: 10px;
       width: 100%;
     }
 
@@ -485,8 +489,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
-      font-size: 0.75rem;
+      margin-bottom: 5px;
+      font-size: 0.72rem;
       font-weight: 700;
       color: var(--text-muted);
     }
@@ -494,8 +498,8 @@
     .field-sub-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 4px;
-      margin-bottom: 8px;
+      gap: 3px;
+      margin-bottom: 6px;
       width: 100%;
     }
 
@@ -504,8 +508,8 @@
       padding: 6px 1px;
       border: 1px solid var(--border);
       background: white;
-      border-radius: 6px;
-      font-size: 0.7rem;
+      border-radius: 5px;
+      font-size: 0.68rem;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
@@ -537,8 +541,8 @@
       background: #eff6ff;
       border: 1px solid #bfdbfe;
       border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 0.78rem;
+      padding: 5px 8px;
+      font-size: 0.75rem;
       font-weight: 700;
       color: #1e40af;
       display: flex;
@@ -552,6 +556,7 @@
       background: white;
       border-radius: var(--radius);
       border: 1px solid var(--border);
+      width: 100%;
     }
 
     .scorebook-grid-table {
@@ -633,7 +638,7 @@
     }
 
     .pbp-container {
-      max-height: 220px;
+      max-height: 200px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -645,7 +650,7 @@
       border-left: 3px solid var(--primary);
       padding: 6px 10px;
       border-radius: 0 6px 6px 0;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
     }
 
     .pbp-card .time {
@@ -676,9 +681,9 @@
     }
 
     .modal-box .title {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 800;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .runner-row {
@@ -687,21 +692,21 @@
       align-items: center;
       padding: 8px 0;
       border-bottom: 1px solid #f1f5f9;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
     .select-input {
-      padding: 6px 10px;
+      padding: 6px 8px;
       border-radius: 6px;
       border: 1px solid var(--border);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
     }
 
     .modal-actions {
       display: flex;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 14px;
     }
 
     .btn-act {
@@ -710,7 +715,7 @@
       border-radius: 8px;
       border: none;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       cursor: pointer;
     }
 
@@ -789,7 +794,6 @@
   <!-- 主內容容器 -->
   <main class="app-container" id="main-container">
 
-    <!-- 列印專用紙本抬頭 -->
     <div class="print-header-ctba">
       <h2 style="font-size: 1.3rem; margin-bottom: 4px;">中華民國棒球協會 標準比賽紀錄表</h2>
       <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0 10px;">
@@ -930,7 +934,7 @@
         </div>
       </div>
 
-      <!-- 右欄：打席觸控輸入主控台 (手機直式核心) -->
+      <!-- 右欄：打席觸控輸入主控台 -->
       <div>
         <!-- 當前打者卡片 -->
         <div class="matchup-container">
@@ -955,7 +959,7 @@
           </div>
         </div>
 
-        <!-- 1. 逐球點燈按鈕 (5 欄平分，完整顯示不裁切) -->
+        <!-- 1. 逐球點燈按鈕 -->
         <div class="card-header" style="margin-bottom: 6px;">
           <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">逐球追蹤 (可選)</span>
           <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="clearCount()">重置球數 ↺</span>
@@ -980,7 +984,7 @@
           <button class="traj-btn" id="btn-traj-none" onclick="selectTrajectory('none')">無軌跡</button>
         </div>
 
-        <!-- 3. 守備方位1 和 守備方位2 面板 (5 欄全平分) -->
+        <!-- 3. 守備方位1 和 守備方位2 面板 -->
         <div class="field-dual-box">
           <div class="field-row-header">
             <span>守備方位 1 (接球/發起者)</span>
@@ -1028,7 +1032,6 @@
           <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">打擊與上壘結果 (點擊速記)</span>
         </div>
         <div class="keypad">
-          <!-- 安打 -->
           <button class="key-btn hit" onclick="openAdvanceModal('1B')">
             一安 <span class="sub">1B</span>
           </button>
@@ -1042,7 +1045,6 @@
             全壘打 <span class="sub">HR</span>
           </button>
 
-          <!-- 保送與三振 -->
           <button class="key-btn walk" onclick="openAdvanceModal('BB')">
             四壞 <span class="sub">BB</span>
           </button>
@@ -1056,7 +1058,6 @@
             見三振 <span class="sub">ꓘ</span>
           </button>
 
-          <!-- 刺殺與戰術 -->
           <button class="key-btn out" onclick="openAdvanceModal('GO')">
             滾地刺 <span class="sub">6-3 / 4-3</span>
           </button>
@@ -1165,7 +1166,6 @@
   <script src="./baseball-engine.js"></script>
 
   <script>
-    // 全域賽事主體物件
     let currentGame = null;
     let selectedFieldPos = 8;
     let pendingPlay = null;
