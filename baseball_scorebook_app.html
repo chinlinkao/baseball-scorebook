@@ -674,6 +674,39 @@
     .btn-act.primary { background: var(--primary); color: white; }
     .btn-act.secondary { background: #e2e8f0; color: #334155; }
 
+    /* 守備調動視覺九宮格 */
+    .field-grid-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #f0fdf4;
+      border: 2px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .field-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .field-row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; max-width: 70%; margin: 0 auto; }
+    .field-row-1 { display: flex; justify-content: center; }
+
+    .def-pos-card {
+      background: white;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 6px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .def-pos-card:hover { border-color: var(--primary); }
+    .def-pos-card.selected { border-color: var(--accent-red); background: #fff1f2; box-shadow: 0 0 6px rgba(225,29,72,0.4); }
+
+    .def-pos-code { font-size: 0.72rem; font-weight: 800; color: var(--primary); }
+    .def-pos-player { font-size: 0.85rem; font-weight: 800; color: var(--text); }
+    .def-pos-subbtn { font-size: 0.65rem; padding: 2px 4px; background: #e2e8f0; border-radius: 4px; margin-top: 2px; }
+
     @media print {
       header, .header-tools, .matchup-container, .pitch-strip, .keypad, .field-picker, .pbp-container, .balance-box, .tool-btn {
         display: none !important;
@@ -728,6 +761,12 @@
       <button class="tool-btn" onclick="window.location.href='./index.html'" style="background: #e11d48; border-color: #be123c;">
         ⚙️ 先發名單排定
       </button>
+      <button class="tool-btn" onclick="openDefensiveDialog()" style="background: #059669; border-color: #047857;">
+        🛡️ 守備調動 / 換投
+      </button>
+      <button class="tool-btn" onclick="openRosterDialog()" style="background: #1d4ed8; border-color: #1e40af;">
+        👥 代打 / 代跑
+      </button>
       <button class="tool-btn active" id="btn-view-ipad" onclick="setDeviceView('ipad')">
         💻 iPad 雙欄
       </button>
@@ -736,9 +775,6 @@
       </button>
       <button class="tool-btn" onclick="openPrintView()">
         🖨️ 列印紙本
-      </button>
-      <button class="tool-btn" onclick="openRosterDialog()">
-        👥 名冊調度 (28人)
       </button>
     </div>
   </header>
@@ -819,7 +855,7 @@
               <thead>
                 <tr>
                   <th rowspan="2" style="width: 26px;">棒</th>
-                  <th rowspan="2" style="width: 28px;">守</th>
+                  <th rowspan="2" style="width: 32px;">守</th>
                   <th rowspan="2" style="width: 100px;">先發球員</th>
                   <th colspan="7">各局早稻田式打席紀錄 (1 ~ 7 局)</th>
                   <th colspan="6">個人打擊統計總計</th>
@@ -921,7 +957,7 @@
           <button class="pitch-key key-strike" onclick="onPitchInput('called_strike')">見好 (S)</button>
           <button class="pitch-key key-strike" onclick="onPitchInput('swinging_strike')">空振 (S)</button>
           <button class="pitch-key key-foul" onclick="onPitchInput('foul')" style="background: #fff7ed; border-color: #ffedd5; color: #c2410c;">界外球 (F)</button>
-          <button class="pitch-key" onclick="onPitchInput('put_in_play')" style="background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 800;">擊球進場</button>
+          <button class="pitch-key" onclick="onPitchInput('put_in_play')" style="display: none; background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 800;">擊球進場</button>
         </div>
 
         <!-- 2. 打擊與上壘結果大按鍵區 (點選後展開下一級細項選擇) -->
@@ -948,9 +984,13 @@
           <button class="key-btn walk" onclick="openAdvanceModal('HBP')">
             觸身 <span class="sub">HBP</span>
           </button>
+          <button class="key-btn walk" onclick="openStolenBaseModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;">
+            盜壘 <span class="sub">SB 盜壘</span>
+          </button>
           <button class="key-btn out" onclick="openAdvanceModal('K')">
             揮三振 <span class="sub">K</span>
           </button>
+
           <button class="key-btn out" onclick="openAdvanceModal('ꓘ')">
             見三振 <span class="sub">ꓘ</span>
           </button>
@@ -969,7 +1009,10 @@
             失誤 <span class="sub">E</span>
           </button>
           <button class="key-btn out" onclick="openAdvanceModal('SAC')">
-            犧牲短 <span class="sub">[1-3]</span>
+            犧短 <span class="sub">[1-3]</span>
+          </button>
+          <button class="key-btn out" onclick="openAdvanceModal('SF')" style="background: #f0f9ff; border-color: #bae6fd; color: #0369a1;">
+            犧飛 <span class="sub">SF</span>
           </button>
         </div>
 
@@ -984,15 +1027,154 @@
           </div>
         </div>
 
-        <!-- 底部輔助列 -->
-        <div style="display: flex; gap: 8px;">
-          <button class="btn-act secondary" onclick="openRosterDialog()">👥 代打/代跑</button>
-          <button class="btn-act secondary" onclick="undoAction()">↩ 復原上一步</button>
-          <button class="btn-act primary" onclick="exportGameData()">💾 匯出存檔</button>
+        <!-- 底部輔助列 (保留代打/代跑與守備調動) -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+          <button class="btn-act secondary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="openRosterDialog()">👥 代打/代跑</button>
+          <button class="btn-act secondary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="openDefensiveDialog()">🛡️ 守備調動</button>
+          <button class="btn-act secondary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="undoAction()">↩ 復原</button>
+          <button class="btn-act primary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="exportGameData()">💾 存檔</button>
         </div>
       </div>
     </div>
   </main>
+
+  <!-- 守備調動與換投彈窗 (Defensive Lineup & Pitcher Change) -->
+  <div class="modal-backdrop" id="defensive-dialog" style="display: none;">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="title" style="color: #047857; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px;">
+        🛡️ 防守方守備調動與投手更換
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+        請點擊場上守位進行對調，或點擊特定位置進行板凳代守與更換投手：
+      </p>
+
+      <!-- 九宮格視覺化防守佈局 -->
+      <div class="field-grid-layout">
+        <!-- 外野 7, 8, 9 -->
+        <div class="field-row-3">
+          <div class="def-pos-card" id="def-card-pos-7" onclick="onDefCardClick(7)">
+            <div class="def-pos-code">7 (左外)</div>
+            <div class="def-pos-player" id="def-name-7">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 7)">代守 ⇄</div>
+          </div>
+          <div class="def-pos-card" id="def-card-pos-8" onclick="onDefCardClick(8)">
+            <div class="def-pos-code">8 (中外)</div>
+            <div class="def-pos-player" id="def-name-8">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 8)">代守 ⇄</div>
+          </div>
+          <div class="def-pos-card" id="def-card-pos-9" onclick="onDefCardClick(9)">
+            <div class="def-pos-code">9 (右外)</div>
+            <div class="def-pos-player" id="def-name-9">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 9)">代守 ⇄</div>
+          </div>
+        </div>
+
+        <!-- 內野 5, 6, 4, 3 -->
+        <div class="field-row-3" style="margin-top: 4px;">
+          <div class="def-pos-card" id="def-card-pos-5" onclick="onDefCardClick(5)">
+            <div class="def-pos-code">5 (三壘)</div>
+            <div class="def-pos-player" id="def-name-5">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 5)">代守 ⇄</div>
+          </div>
+          <div class="def-pos-card" id="def-card-pos-6" onclick="onDefCardClick(6)">
+            <div class="def-pos-code">6 (游擊)</div>
+            <div class="def-pos-player" id="def-name-6">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 6)">代守 ⇄</div>
+          </div>
+          <div class="def-pos-card" id="def-card-pos-4" onclick="onDefCardClick(4)">
+            <div class="def-pos-code">4 (二壘)</div>
+            <div class="def-pos-player" id="def-name-4">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 4)">代守 ⇄</div>
+          </div>
+        </div>
+
+        <!-- 投捕 1, 2, 3 -->
+        <div class="field-row-2" style="margin-top: 4px;">
+          <div class="def-pos-card" id="def-card-pos-1" onclick="onDefCardClick(1)" style="border-color: #059669; background: #ecfdf5;">
+            <div class="def-pos-code" style="color: #047857;">1 (投手)</div>
+            <div class="def-pos-player" id="def-name-1">-</div>
+            <div class="def-pos-subbtn" onclick="openPitcherSubModal(event)" style="background: #a7f3d0; color: #065f46;">換投 ⚾</div>
+          </div>
+          <div class="def-pos-card" id="def-card-pos-3" onclick="onDefCardClick(3)">
+            <div class="def-pos-code">3 (一壘)</div>
+            <div class="def-pos-player" id="def-name-3">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 3)">代守 ⇄</div>
+          </div>
+        </div>
+
+        <!-- 捕手 2 -->
+        <div class="field-row-1" style="margin-top: 4px;">
+          <div class="def-pos-card" id="def-card-pos-2" onclick="onDefCardClick(2)" style="width: 45%;">
+            <div class="def-pos-code">2 (捕手)</div>
+            <div class="def-pos-player" id="def-name-2">-</div>
+            <div class="def-pos-subbtn" onclick="openSubForOrder(event, 2)">代守 ⇄</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size: 0.78rem; color: #475569; background: #f8fafc; padding: 6px 10px; border-radius: 6px; margin-bottom: 10px;">
+        💡 提示：點擊兩張卡片可相互交換守位；點擊卡片右下方「代守 ⇄」可從下拉選單選擇新球員；點擊「換投 ⚾」選擇救援投手。
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeDefensiveDialog()">取消</button>
+        <button class="btn-act primary" onclick="commitDefensiveChanges()" style="background: #059669;">確認守備調動並同步至紀錄簿 ✔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下拉選單：代守 / 換投 球員選擇彈窗 -->
+  <div class="modal-backdrop" id="def-player-select-dialog" style="display: none; z-index: 250;">
+    <div class="modal-box" style="max-width: 400px;">
+      <div class="title" id="def-select-title" style="color: #047857;">選擇球員</div>
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.85rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;" id="def-select-label">請選擇新上場球員：</label>
+        <select class="select-input" id="def-player-dropdown" style="width: 100%; font-size: 0.95rem; padding: 8px;">
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeDefPlayerSelectModal()">取消</button>
+        <button class="btn-act primary" id="def-select-confirm-btn" style="background: #059669;">確認選擇 ✔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 28 人名冊調度彈窗 (代打 / 代跑選擇器) -->
+  <div class="modal-backdrop" id="roster-dialog" style="display: none;">
+    <div class="modal-box" style="max-height: 85vh; overflow-y: auto;">
+      <div class="title" id="roster-dialog-title">球員名冊 - 代打 / 代跑安排</div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;" id="roster-dialog-subtext">
+        點擊板凳球員為當前打者安排代打 (PH) 或代跑 (PR)：
+      </p>
+
+      <div id="roster-dialog-list" style="display: flex; flex-direction: column; gap: 6px;">
+        <!-- JS 動態填充 -->
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeRosterDialog()">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 盜壘戰術選擇彈窗 -->
+  <div class="modal-backdrop" id="stolenbase-dialog" style="display: none;">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="title">⚡ 盜壘戰術選擇 (Stolen Base)</div>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+        請選擇壘包上跑者的盜壘目標或失敗結果，確定後記錄簿將自動繪製進壘路線與 SB / CS 標記：
+      </p>
+
+      <div id="sb-dialog-runners-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+        <!-- JS 動態生成壘上跑者選項 -->
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeStolenBaseModal()">取消</button>
+        <button class="btn-act primary" onclick="commitStolenBase()">確認送出盜壘戰術 ✔</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 雙殺型態選擇彈窗 -->
   <div class="modal-backdrop" id="doubleplay-dialog" style="display: none;">
@@ -1084,7 +1266,7 @@
     </div>
   </div>
 
-  <!-- 擊球結果與下一級選項（擊球性質、守備方位1、守備方位2）與進壘確認彈窗 -->
+  <!-- 擊球結果與下一級選項與進壘確認彈窗 -->
   <div class="modal-backdrop" id="advance-dialog" style="display: none;">
     <div class="modal-box">
       <div class="title" id="adv-dialog-title" style="border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 10px;">
@@ -1160,24 +1342,6 @@
     </div>
   </div>
 
-  <!-- 28 人名冊調度彈窗 -->
-  <div class="modal-backdrop" id="roster-dialog" style="display: none;">
-    <div class="modal-box" style="max-height: 85vh; overflow-y: auto;">
-      <div class="title">台中小海盜大叔隊 - 28 人球員名冊</div>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
-        點擊隊員安排為代打 (PH)、代跑 (PR) 或換投：
-      </p>
-
-      <div id="roster-dialog-list" style="display: flex; flex-direction: column; gap: 6px;">
-        <!-- JS 動態填充 -->
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn-act secondary" onclick="closeRosterDialog()">關閉</button>
-      </div>
-    </div>
-  </div>
-
   <!-- 引入模組 -->
   <script src="./roster_pirates.js"></script>
   <script src="./waseda-score-grid.js"></script>
@@ -1196,6 +1360,13 @@
     let modalPos1 = 6;
     let modalPos2 = 3;
 
+    // 守備調動暫存變數
+    let defSelectedCardPos = null;
+    let pendingDefSwaps = [];
+    let pendingDefSubs = [];
+    let pendingDefPitcher = null;
+    let currentDefSelectCallback = null;
+
     window.addEventListener('DOMContentLoaded', () => {
       initFullGame();
       refreshDashboard();
@@ -1205,6 +1376,28 @@
       checkBalances();
     });
 
+    function getTeamBenchRoster(teamKey) {
+      if (teamKey === 'away') {
+        return PIRATES_ROSTER;
+      } else {
+        return [
+          { id: "H01", number: "7",  name: "張志豪" },
+          { id: "H02", number: "9",  name: "王威晨" },
+          { id: "H03", number: "39", name: "詹子賢" },
+          { id: "H04", number: "25", name: "許基宏" },
+          { id: "H05", number: "90", name: "江坤宇" },
+          { id: "H06", number: "4",  name: "陳文杰" },
+          { id: "H07", number: "74", name: "許躍騰" },
+          { id: "H08", number: "66", name: "黃韋盛" },
+          { id: "H09", number: "19", name: "鄭凱文" },
+          { id: "H10", number: "1",  name: "陳子豪" },
+          { id: "H11", number: "11", name: "廖乙忠" },
+          { id: "H12", number: "42", name: "陳家駒" }
+        ];
+      }
+    }
+
+    // 【修正重點】處理沒有外部寫入陣容時的預設名單備援，確保與升冪排序且取前9名的邏輯一致
     function initFullGame() {
       let awayStarters = [];
       let homeStarters = [];
@@ -1221,25 +1414,39 @@
       }
 
       if (awayStarters.length === 0) {
-        awayStarters = PIRATES_ROSTER.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder).map((p, idx) => ({
+        awayStarters = PIRATES_ROSTER.sort((a, b) => {
+          const numA = a.number === '00' ? -0.5 : parseInt(a.number, 10);
+          const numB = b.number === '00' ? -0.5 : parseInt(b.number, 10);
+          return (isNaN(numA) ? 999 : numA) - (isNaN(numB) ? 999 : numB);
+        }).slice(0, 9).map((p, idx) => ({
           ...p,
           order: idx + 1,
-          pos: p.defaultPos
+          pos: p.defaultPos || "DH",
+          posHistory: [p.defaultPos || "DH"]
         }));
       }
 
       if (homeStarters.length === 0) {
         homeStarters = [
-          { order: 1, number: "7",  name: "張志豪", pos: "8" },
-          { order: 2, number: "9",  name: "王威晨", pos: "5" },
-          { order: 3, number: "39", name: "詹子賢", pos: "7" },
-          { order: 4, number: "25", name: "許基宏", pos: "3" },
-          { order: 5, number: "90", name: "江坤宇", pos: "6" },
-          { order: 6, number: "4",  name: "陳文杰", pos: "9" },
-          { order: 7, number: "74", name: "許躍騰", pos: "2" },
-          { order: 8, number: "66", name: "黃韋盛", pos: "4" },
-          { order: 9, number: "19", name: "鄭凱文", pos: "1" }
-        ];
+          { number: "7",  name: "張志豪", pos: "8" },
+          { number: "9",  name: "王威晨", pos: "5" },
+          { number: "39", name: "詹子賢", pos: "7" },
+          { number: "25", name: "許基宏", pos: "3" },
+          { number: "90", name: "江坤宇", pos: "6" },
+          { number: "4",  name: "陳文杰", pos: "9" },
+          { number: "74", name: "許躍騰", pos: "2" },
+          { number: "66", name: "黃韋盛", pos: "4" },
+          { number: "19", name: "鄭凱文", pos: "1" },
+          { number: "1",  name: "陳子豪", pos: "DH" },
+          { number: "11", name: "廖乙忠", pos: "DH" },
+          { number: "42", name: "陳家駒", pos: "DH" }
+        ].sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10))
+        .slice(0, 9)
+        .map((p, idx) => ({
+          ...p,
+          order: idx + 1,
+          posHistory: [p.pos]
+        }));
       }
 
       currentGame = BaseballEngine.createNewGame({
@@ -1256,6 +1463,7 @@
         ...p,
         order: idx + 1,
         isSub: false,
+        posHistory: p.posHistory || [p.pos],
         playerKey: `away_order${idx}_sub0`
       }]);
       currentGame.teams.away.lineup = currentGame.teams.away.orderSlots.map(slot => slot[0]);
@@ -1264,6 +1472,7 @@
         ...p,
         order: idx + 1,
         isSub: false,
+        posHistory: p.posHistory || [p.pos],
         playerKey: `home_order${idx}_sub0`
       }]);
       currentGame.teams.home.lineup = currentGame.teams.home.orderSlots.map(slot => slot[0]);
@@ -1318,6 +1527,329 @@
       return res;
     }
 
+    function recordStolenBaseWithEnhancedMatrix(stolenPayload) {
+      saveEnhancedSnapshot();
+      const res = BaseballEngine.recordStolenBase(currentGame, stolenPayload);
+      return res;
+    }
+
+    // 代打 (PH) / 代跑 (PR) 功能
+    function openRosterDialog() {
+      const dialog = document.getElementById('roster-dialog');
+      const list = document.getElementById('roster-dialog-list');
+      const titleEl = document.getElementById('roster-dialog-title');
+      const subEl = document.getElementById('roster-dialog-subtext');
+
+      const s = currentGame.status;
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const team = currentGame.teams[battingTeamKey];
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const currentBatter = team.lineup[orderIdx];
+
+      titleEl.textContent = `【${s.isTop ? '客隊' : '主隊'}進攻】代打 / 代跑調度`;
+      subEl.innerHTML = `準備為當前打者 <strong>第 ${orderIdx + 1} 棒 #${currentBatter.number} ${currentBatter.name}</strong> 安排球員：`;
+
+      const rosterList = getTeamBenchRoster(battingTeamKey);
+      const activeStarters = team.lineup;
+
+      list.innerHTML = rosterList.map(p => {
+        const isStarter = activeStarters.some(s => String(s.number) === String(p.number));
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: ${isStarter ? '#eff6ff' : '#ffffff'}; border-radius: 8px; border: 1px solid #cbd5e1;">
+            <div>
+              <span style="font-weight: 800; font-size: 0.95rem; margin-right: 6px; color: #1e293b;">#${p.number}</span>
+              <span style="font-weight: 700; font-size: 0.9rem;">${p.name}</span>
+              <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">${isStarter ? '(在場上)' : '(板凳可調用)'}</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button class="tool-btn" style="padding: 4px 8px; font-size: 0.75rem; background: #e11d48; border-color: #be123c;" onclick="substituteBatter('${p.name}', '${p.number}', 'PH')">
+                代打 (PH)
+              </button>
+              <button class="tool-btn" style="padding: 4px 8px; font-size: 0.75rem; background: #2563eb; border-color: #1d4ed8;" onclick="substituteBatter('${p.name}', '${p.number}', 'PR')">
+                代跑 (PR)
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      dialog.style.display = 'flex';
+    }
+
+    function closeRosterDialog() {
+      document.getElementById('roster-dialog').style.display = 'none';
+    }
+
+    function substituteBatter(name, number, subType = 'PH') {
+      saveEnhancedSnapshot();
+
+      const s = currentGame.status;
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const team = currentGame.teams[battingTeamKey];
+
+      if (!team.orderSlots) return;
+
+      const slot = team.orderSlots[orderIdx];
+      const oldPlayer = slot[slot.length - 1];
+      const subIdx = slot.length;
+      const targetPos = oldPlayer.pos || '代';
+
+      const newSubPlayer = {
+        id: "P_SUB_" + Date.now(),
+        number: number,
+        name: name,
+        pos: targetPos,
+        posHistory: [targetPos],
+        order: orderIdx + 1,
+        isSub: true,
+        playerKey: `${battingTeamKey}_order${orderIdx}_sub${subIdx}`
+      };
+
+      slot.push(newSubPlayer);
+      team.lineup[orderIdx] = newSubPlayer;
+
+      if (!currentGame.enhancedMatrix[battingTeamKey][newSubPlayer.playerKey]) {
+        currentGame.enhancedMatrix[battingTeamKey][newSubPlayer.playerKey] = {};
+      }
+
+      const cellArr = currentGame.enhancedMatrix[battingTeamKey][newSubPlayer.playerKey][s.inning] || [];
+      cellArr.push({
+        isSubstitution: true,
+        subType: subType,
+        pitches: [],
+        paths: {},
+        notations: {}
+      });
+      currentGame.enhancedMatrix[battingTeamKey][newSubPlayer.playerKey][s.inning] = cellArr;
+
+      const inningName = `${s.inning}局${s.isTop ? '上' : '下'}`;
+      const typeText = subType === 'PH' ? '代打' : '代跑';
+      const pbpMessage = `【${inningName} 戰術調度】第 ${orderIdx + 1} 棒換上 ${typeText}：#${number} ${name}（替換 #${oldPlayer.number} ${oldPlayer.name}）。`;
+      currentGame.pbpEvents.unshift({
+        id: "PBP_SUB_" + Date.now(),
+        text: pbpMessage,
+        inning: s.inning,
+        isTop: s.isTop,
+        runs: 0,
+        scoreSnapshot: `${s.scoreAway}:${s.scoreHome}`
+      });
+
+      closeRosterDialog();
+      refreshDashboard();
+      renderScorebookMatrix();
+      renderPBPFeed();
+      checkBalances();
+
+      alert(`已成功於第 ${orderIdx + 1} 棒換上${typeText}：#${number} ${name}！`);
+    }
+
+    function openDefensiveDialog() {
+      defSelectedCardPos = null;
+      pendingDefSwaps = [];
+      pendingDefSubs = [];
+      pendingDefPitcher = null;
+
+      refreshDefensiveCardsDisplay();
+      document.getElementById('defensive-dialog').style.display = 'flex';
+    }
+
+    function closeDefensiveDialog() {
+      document.getElementById('defensive-dialog').style.display = 'none';
+    }
+
+    function refreshDefensiveCardsDisplay() {
+      const s = currentGame.status;
+      const fieldingTeamKey = s.isTop ? 'home' : 'away';
+
+      let tempLineup = JSON.parse(JSON.stringify(currentGame.teams[fieldingTeamKey].lineup));
+
+      pendingDefSwaps.forEach(({ orderIdxA, orderIdxB }) => {
+        if (tempLineup[orderIdxA] && tempLineup[orderIdxB]) {
+          const tempPos = tempLineup[orderIdxA].pos;
+          tempLineup[orderIdxA].pos = tempLineup[orderIdxB].pos;
+          tempLineup[orderIdxB].pos = tempPos;
+        }
+      });
+
+      pendingDefSubs.forEach(({ orderIdx, newPlayer, newPos }) => {
+        if (tempLineup[orderIdx]) {
+          tempLineup[orderIdx] = {
+            ...tempLineup[orderIdx],
+            name: newPlayer.name,
+            number: newPlayer.number,
+            pos: newPos || tempLineup[orderIdx].pos
+          };
+        }
+      });
+
+      if (pendingDefPitcher && pendingDefPitcher.newPitcher) {
+        const p1Idx = tempLineup.findIndex(p => String(p.pos) === '1');
+        if (p1Idx !== -1) {
+          tempLineup[p1Idx] = {
+            ...tempLineup[p1Idx],
+            name: pendingDefPitcher.newPitcher.name,
+            number: pendingDefPitcher.newPitcher.number,
+            pos: "1"
+          };
+        }
+      }
+
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(posCode => {
+        const card = document.getElementById(`def-card-pos-${posCode}`);
+        const nameEl = document.getElementById(`def-name-${posCode}`);
+        if (!card || !nameEl) return;
+
+        card.classList.remove('selected');
+        if (defSelectedCardPos === posCode) {
+          card.classList.add('selected');
+        }
+
+        const player = tempLineup.find(p => String(p.pos) === String(posCode));
+        if (player) {
+          nameEl.textContent = `#${player.number} ${player.name}`;
+        } else {
+          nameEl.textContent = "未指定";
+        }
+      });
+    }
+
+    function onDefCardClick(posCode) {
+      const s = currentGame.status;
+      const fieldingTeamKey = s.isTop ? 'home' : 'away';
+      const lineup = currentGame.teams[fieldingTeamKey].lineup;
+
+      if (defSelectedCardPos === null) {
+        defSelectedCardPos = posCode;
+      } else if (defSelectedCardPos === posCode) {
+        defSelectedCardPos = null;
+      } else {
+        const posA = defSelectedCardPos;
+        const posB = posCode;
+
+        const pAIdx = lineup.findIndex(p => String(p.pos) === String(posA));
+        const pBIdx = lineup.findIndex(p => String(p.pos) === String(posB));
+
+        if (pAIdx !== -1 && pBIdx !== -1) {
+          pendingDefSwaps.push({ orderIdxA: pAIdx, orderIdxB: pBIdx });
+        }
+
+        defSelectedCardPos = null;
+      }
+      refreshDefensiveCardsDisplay();
+    }
+
+    function openSubForOrder(event, posCode) {
+      event.stopPropagation();
+      const s = currentGame.status;
+      const fieldingTeamKey = s.isTop ? 'home' : 'away';
+      const lineup = currentGame.teams[fieldingTeamKey].lineup;
+      const pIdx = lineup.findIndex(p => String(p.pos) === String(posCode));
+
+      if (pIdx === -1) {
+        alert("找不到該位置的現役守備員！");
+        return;
+      }
+
+      const oldPlayer = lineup[pIdx];
+      const roster = getTeamBenchRoster(fieldingTeamKey);
+
+      const dropdown = document.getElementById('def-player-dropdown');
+      dropdown.innerHTML = roster.map(p => `<option value="${p.number},${p.name}">#${p.number} ${p.name}</option>`).join('');
+
+      document.getElementById('def-select-title').textContent = `🛡️️ 板凳代守 ─ #${posCode} 位 (${getPosChinese(String(posCode))})`;
+      document.getElementById('def-select-label').textContent = `請選擇替代原守備員 #${oldPlayer.number} ${oldPlayer.name} 的球員：`;
+
+      currentDefSelectCallback = function() {
+        const val = dropdown.value;
+        if (!val) return;
+        const [num, name] = val.split(',');
+        pendingDefSubs.push({
+          orderIdx: pIdx,
+          newPlayer: { name: name.trim(), number: num.trim() },
+          newPos: String(posCode)
+        });
+        closeDefPlayerSelectModal();
+        refreshDefensiveCardsDisplay();
+      };
+
+      document.getElementById('def-player-select-dialog').style.display = 'flex';
+    }
+
+    function openPitcherSubModal(event) {
+      event.stopPropagation();
+      const s = currentGame.status;
+      const fieldingTeamKey = s.isTop ? 'home' : 'away';
+      const roster = getTeamBenchRoster(fieldingTeamKey);
+
+      const dropdown = document.getElementById('def-player-dropdown');
+      dropdown.innerHTML = roster.map(p => `<option value="${p.number},${p.name}">#${p.number} ${p.name}</option>`).join('');
+
+      document.getElementById('def-select-title').textContent = `⚾ 登錄救援投手`;
+      document.getElementById('def-select-label').textContent = `請選擇新上場的救援投手：`;
+
+      currentDefSelectCallback = function() {
+        const val = dropdown.value;
+        if (!val) return;
+        const [num, name] = val.split(',');
+        pendingDefPitcher = {
+          newPitcher: { name: name.trim(), number: num.trim() },
+          timing: 'INNING_START'
+        };
+        closeDefPlayerSelectModal();
+        refreshDefensiveCardsDisplay();
+      };
+
+      document.getElementById('def-player-select-dialog').style.display = 'flex';
+    }
+
+    function closeDefPlayerSelectModal() {
+      document.getElementById('def-player-select-dialog').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const confirmBtn = document.getElementById('def-select-confirm-btn');
+      if (confirmBtn) {
+        confirmBtn.onclick = function() {
+          if (currentDefSelectCallback) currentDefSelectCallback();
+        };
+      }
+    });
+
+    function commitDefensiveChanges() {
+      if (pendingDefSwaps.length === 0 && pendingDefSubs.length === 0 && !pendingDefPitcher) {
+        alert("未進行任何守備異動。");
+        closeDefensiveDialog();
+        return;
+      }
+
+      saveEnhancedSnapshot();
+
+      const changePayload = {
+        swaps: pendingDefSwaps,
+        substitutions: pendingDefSubs,
+        pitcherChange: pendingDefPitcher
+      };
+
+      const s = currentGame.status;
+      const fieldingTeamKey = s.isTop ? 'home' : 'away';
+
+      BaseballEngine.changeDefensiveLineup(currentGame, changePayload);
+
+      activeScorebookTab = fieldingTeamKey;
+      document.getElementById('btn-tab-away').classList.toggle('active', activeScorebookTab === 'away');
+      document.getElementById('btn-tab-home').classList.toggle('active', activeScorebookTab === 'home');
+
+      closeDefensiveDialog();
+      refreshDashboard();
+      renderScorebookMatrix();
+      renderPitcherTable();
+      renderPBPFeed();
+      checkBalances();
+
+      alert("守備調動與換投已成功套用，並同步更新早稻田紀錄表與投手數據！");
+    }
+
     function setDeviceView(mode) {
       const container = document.getElementById('main-container');
       const btnIpad = document.getElementById('btn-view-ipad');
@@ -1342,7 +1874,6 @@
       checkBalances();
     }
 
-    // Modal 內部下一級選項控制
     function setModalTraj(traj) {
       modalTraj = traj;
       document.querySelectorAll('#group-trajectory .traj-btn').forEach(b => b.classList.remove('active'));
@@ -1382,7 +1913,7 @@
         return resType;
       }
       if (p2 === 'none') {
-        if (resType === 'FO') return `F${p1}`;
+        if (resType === 'FO' || resType === 'SF') return `F${p1}`;
         if (['1B', '2B', '3B'].includes(resType)) return `${resType} ${p1}`;
         if (resType === 'HR') return `HR ${p1}`;
         if (resType === 'E') return `E${p1}`;
@@ -1468,6 +1999,81 @@
       currentGame.status.strikes = 0;
       currentGame.status.currentPitches = [];
       refreshDashboard();
+    }
+
+    function openStolenBaseModal() {
+      const s = currentGame.status;
+      const hasRunner = s.bases[1] || s.bases[2] || s.bases[3];
+      if (!hasRunner) {
+        alert("目前壘包上沒有跑者，無法執行盜壘戰術！");
+        return;
+      }
+
+      const listContainer = document.getElementById('sb-dialog-runners-list');
+      let html = '';
+
+      [3, 2, 1].forEach(b => {
+        const runner = s.bases[b];
+        if (runner) {
+          html += `
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
+              <div style="font-weight: 800; font-size: 0.88rem; color: #1e293b; margin-bottom: 6px;">
+                📍 ${b}壘跑者：${runner.player.name} (#${runner.player.number})
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <label style="font-size: 0.82rem; font-weight: 700; color: #475569;">盜壘處置：</label>
+                <select class="select-input" id="sb-select-runner-${b}" style="flex: 1;">
+                  <option value="NONE">留原壘 (無盜壘)</option>
+                  ${b === 1 ? '<option value="SB_2" selected>成功盜二壘 (SB)</option>' : ''}
+                  ${b === 1 ? '<option value="CS_2">盜二壘失敗刺殺 (CS 2-4)</option>' : ''}
+                  ${b === 2 ? '<option value="SB_3" selected>成功盜三壘 (SB)</option>' : ''}
+                  ${b === 2 ? '<option value="CS_3">盜三壘失敗刺殺 (CS 2-5)</option>' : ''}
+                  ${b === 3 ? '<option value="SB_H" selected>成功盜本壘 (SB 得分)</option>' : ''}
+                  ${b === 3 ? '<option value="CS_H">盜本壘失敗刺殺 (CS 2-2)</option>' : ''}
+                  ${b === 1 ? '<option value="SB_3">強行盜三壘 (SB)</option>' : ''}
+                  ${b === 1 ? '<option value="SB_H">強行盜本壘 (SB 得分)</option>' : ''}
+                  ${b === 2 ? '<option value="SB_H">強行盜本壘 (SB 得分)</option>' : ''}
+                </select>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      listContainer.innerHTML = html;
+      document.getElementById('stolenbase-dialog').style.display = 'flex';
+    }
+
+    function closeStolenBaseModal() {
+      document.getElementById('stolenbase-dialog').style.display = 'none';
+    }
+
+    function commitStolenBase() {
+      const s = currentGame.status;
+      const steals = {};
+      let hasAnySteal = false;
+
+      [1, 2, 3].forEach(b => {
+        const el = document.getElementById(`sb-select-runner-${b}`);
+        if (el && el.value !== 'NONE') {
+          steals[b] = el.value;
+          hasAnySteal = true;
+        }
+      });
+
+      if (!hasAnySteal) {
+        alert("未選擇任何跑者進行盜壘戰術！");
+        return;
+      }
+
+      recordStolenBaseWithEnhancedMatrix({ steals });
+
+      closeStolenBaseModal();
+      refreshDashboard();
+      renderScorebookMatrix();
+      renderPitcherTable();
+      renderPBPFeed();
+      checkBalances();
     }
 
     function openDoublePlayModal() {
@@ -1575,7 +2181,6 @@
       const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
       const batter = currentGame.teams[battingTeamKey].lineup[orderIdx];
 
-      // 依據打擊結果設定智慧預設值
       if (['1B', '2B', '3B'].includes(resultType)) {
         modalTraj = 'line';
         modalPos1 = 8;
@@ -1736,6 +2341,12 @@
         document.getElementById('profile-pos').textContent = getPosChinese(batter.pos);
       }
 
+      const fieldingTeamKey = s.isTop ? 'home' : 'away';
+      const currentPitcher = currentGame.teams[fieldingTeamKey].pitchers[currentGame.teams[fieldingTeamKey].currentPitcherIdx];
+      if (currentPitcher) {
+        document.getElementById('profile-pitcher-name').textContent = `#${currentPitcher.number} ${currentPitcher.name}`;
+      }
+
       document.getElementById('field-node-1').classList.toggle('occupied', !!s.bases[1]);
       document.getElementById('field-node-2').classList.toggle('occupied', !!s.bases[2]);
       document.getElementById('field-node-3').classList.toggle('occupied', !!s.bases[3]);
@@ -1787,10 +2398,19 @@
           const orderDisplay = (subIdx === 0) ? player.order : '<span style="font-size:0.75rem; color:#e11d48; font-weight:800;">代</span>';
           const rowBg = player.isSub ? '#fff1f2' : '#ffffff';
 
+          const posList = (player.posHistory && player.posHistory.length > 0) ? player.posHistory : [player.pos];
+          const posCellInner = posList.map((p, pIdx) => {
+            if (pIdx === 0) {
+              return `<div>${p}</div>`;
+            } else {
+              return `<div style="border-top: 1px solid #94a3b8; margin-top: 2px; padding-top: 1px; color: #dc2626; font-weight: 800;">${p}</div>`;
+            }
+          }).join('');
+
           html += `
             <tr style="background: ${rowBg};">
               <td style="font-weight: 800; background: #f8fafc; text-align: center;">${orderDisplay}</td>
-              <td style="font-weight: 700; font-size: 0.78rem; text-align: center;">${player.pos}</td>
+              <td style="font-weight: 700; font-size: 0.78rem; text-align: center; vertical-align: middle; padding: 2px;">${posCellInner}</td>
               <td class="player-title-col">
                 <div class="name">${player.name}</div>
                 <div class="meta">#${player.number} ‧ ${getPosChinese(player.pos)}</div>
@@ -1892,8 +2512,8 @@
             if (center.isRun) totalR++;
             if (firstText.includes('BB')) totalBB++;
             else if (firstText.includes('HBP')) totalHBP++;
-            else if (isSac) totalSH++;
             else if (firstText.includes('SF')) totalSF++;
+            else if (isSac) totalSH++;
             else totalAB++;
           });
         });
@@ -1957,7 +2577,7 @@
         renderPitcherTable();
         renderPBPFeed();
         checkBalances();
-        alert("已成功復原上一個打席！");
+        alert("已成功復原上一個步驟！");
       } else {
         alert("沒有更早的歷史步驟可復原。");
       }
@@ -1984,70 +2604,11 @@
       window.print();
     }
 
-    function openRosterDialog() {
-      const dialog = document.getElementById('roster-dialog');
-      const list = document.getElementById('roster-dialog-list');
-      const starters = currentGame.teams.away.lineup;
-
-      list.innerHTML = PIRATES_ROSTER.map(p => {
-        const isStarter = starters.some(s => s.id === p.id);
-        return `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: ${isStarter ? '#eff6ff' : '#f8fafc'}; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <div>
-              <span style="font-weight: 800; margin-right: 6px;">#${p.number}</span>
-              <span style="font-weight: 700;">${p.name}</span>
-              <span style="font-size: 0.75rem; color: #64748b; margin-left: 6px;">${isStarter ? '(先發名單中)' : '(板凳)'}</span>
-            </div>
-            <div>
-              <button class="tool-btn" style="padding: 2px 8px; font-size: 0.72rem;" onclick="substituteBatter('${p.name}', '${p.number}')">
-                派為代打 (PH)
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      dialog.style.display = 'flex';
-    }
-
-    function closeRosterDialog() {
-      document.getElementById('roster-dialog').style.display = 'none';
-    }
-
-    function substituteBatter(name, number) {
-      const s = currentGame.status;
-      const battingTeamKey = s.isTop ? 'away' : 'home';
-      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
-      const team = currentGame.teams[battingTeamKey];
-
-      if (!team.orderSlots) return;
-
-      const slot = team.orderSlots[orderIdx];
-      const subIdx = slot.length;
-      const newSubPlayer = {
-        id: "P_SUB_" + Date.now(),
-        number: number,
-        name: name,
-        pos: "代",
-        order: orderIdx + 1,
-        isSub: true,
-        playerKey: `${battingTeamKey}_order${orderIdx}_sub${subIdx}`
-      };
-
-      slot.push(newSubPlayer);
-      team.lineup[orderIdx] = newSubPlayer;
-
-      closeRosterDialog();
-      refreshDashboard();
-      renderScorebookMatrix();
-      alert(`已在第 ${orderIdx + 1} 棒原打者下方新增代打資料列：#${number} ${name}！`);
-    }
-
     function getPosChinese(pos) {
       const map = {
         '1': '投手 P', '2': '捕手 C', '3': '一壘 1B', '4': '二壘 2B',
         '5': '三壘 3B', '6': '游擊 SS', '7': '左外 LF', '8': '中外 CF', '9': '右外 RF',
-        'DH': '指打 DH', 'BN': '板凳 BN', '代': '代打 PH'
+        'DH': '指打 DH', 'BN': '板凳 BN', '代': '代打 PH', '跑': '代跑 PR'
       };
       return map[pos] || pos;
     }

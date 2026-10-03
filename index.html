@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>棒球賽前攻守名單與守位安排 (Lineup Setup)</title>
+  <title>棒球賽前攻守名單安排 (Lineup Setup) 升級版</title>
   <style>
     :root {
       --primary: #2563eb;
@@ -31,10 +31,9 @@
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.4;
-      padding-bottom: 70px;
+      padding-bottom: 80px;
     }
 
-    /* 頂部導航列 */
     header {
       background: #0f172a;
       color: white;
@@ -45,7 +44,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
     .header-brand {
@@ -97,14 +96,12 @@
       color: white;
     }
 
-    /* 主容器 */
     .container {
       max-width: 1360px;
       margin: 0 auto;
       padding: 14px;
     }
 
-    /* 手機外框模式模擬 (桌機上切換手機時) */
     .container.mode-mobile {
       max-width: 440px;
       background: #ffffff;
@@ -115,7 +112,6 @@
       padding: 14px;
     }
 
-    /* 賽事基本資訊卡片 */
     .match-meta-card {
       background: white;
       border-radius: var(--radius);
@@ -158,7 +154,6 @@
       border-color: var(--primary);
     }
 
-    /* iPad 橫向左右雙欄對決佈局 */
     .lineup-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -172,7 +167,6 @@
       }
     }
 
-    /* 隊伍設定卡片 */
     .team-card {
       background: var(--card-bg);
       border-radius: var(--radius);
@@ -187,7 +181,7 @@
       align-items: center;
       padding-bottom: 12px;
       border-bottom: 2px solid #f1f5f9;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .team-badge-pill {
@@ -214,20 +208,29 @@
       font-weight: 700;
       cursor: pointer;
       color: #334155;
+      transition: all 0.15s;
     }
 
-    .btn-sm:hover { background: #f8fafc; }
+    .btn-sm:hover { background: #f8fafc; border-color: #94a3b8; }
+    .btn-sm.btn-add { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .btn-sm.btn-add:hover { background: #d1fae5; }
+    .btn-sm.btn-del { background: #fef2f2; color: #b91c1c; border-color: #fecdd3; }
+    .btn-sm.btn-del:hover { background: #ffe4e6; }
 
-    /* 先發投手卡片 */
     .pitcher-select-box {
       background: #f8fafc;
       border: 1px dashed var(--border);
       border-radius: 8px;
       padding: 10px 14px;
       margin-bottom: 14px;
+    }
+
+    .pitcher-flex-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .pitcher-label {
@@ -239,7 +242,46 @@
       gap: 6px;
     }
 
-    /* 棒次排列表格 (Lineup Table) */
+    .custom-inputs-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      width: 100%;
+    }
+
+    .custom-input-num {
+      width: 65px;
+      padding: 5px 8px;
+      border: 1px solid #3b82f6;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: #eff6ff;
+    }
+
+    .custom-input-name {
+      flex: 1;
+      padding: 5px 8px;
+      border: 1px solid #3b82f6;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: #eff6ff;
+    }
+
+    .order-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #475569;
+    }
+
     .lineup-table {
       width: 100%;
       border-collapse: collapse;
@@ -264,12 +306,12 @@
       font-weight: 800;
       font-size: 0.95rem;
       text-align: center;
-      color: #475569;
+      color: #1e293b;
     }
 
     .player-select {
       width: 100%;
-      padding: 6px 10px;
+      padding: 6px 8px;
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 0.88rem;
@@ -278,16 +320,15 @@
     }
 
     .pos-select {
-      width: 90px;
-      padding: 6px 8px;
+      width: 95px;
+      padding: 6px 6px;
       border: 1px solid var(--border);
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       background: #f8fafc;
     }
 
-    /* 手機專屬頁籤導航 (手機模式下客/主隊切換) */
     .mobile-team-tabs {
       display: none;
       gap: 8px;
@@ -312,7 +353,6 @@
       color: white;
     }
 
-    /* 底部固定啟動按鈕 */
     .bottom-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -323,7 +363,7 @@
       justify-content: space-between;
       align-items: center;
       z-index: 90;
-      box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05);
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
     }
 
     .start-game-btn {
@@ -338,7 +378,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3);
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);
       transition: all 0.2s;
     }
 
@@ -348,17 +388,17 @@
 
     .validation-hint {
       font-size: 0.85rem;
-      color: var(--text-muted);
+      font-weight: 700;
+      color: #059669;
     }
   </style>
 </head>
 <body>
 
-  <!-- 頂部操作列 -->
   <header>
     <div class="header-brand">
       <h1>⚾ 棒球賽前攻守名單安排</h1>
-      <span class="badge-stage">賽前排定階段</span>
+      <span class="badge-stage">升級擴充版</span>
     </div>
 
     <div class="view-switcher">
@@ -373,7 +413,6 @@
 
   <main class="container" id="main-container">
 
-    <!-- 1. 賽事抬頭資訊 -->
     <div class="match-meta-card">
       <div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 4px;">🏆 賽事與裁判設定</div>
       <div class="meta-grid">
@@ -400,7 +439,6 @@
       </div>
     </div>
 
-    <!-- 手機模式專屬隊伍分頁切換 -->
     <div class="mobile-team-tabs" id="mobile-tabs-bar">
       <button class="mobile-tab-btn active" id="tab-away-btn" onclick="switchMobileTeam('away')">
         先攻：台中小海盜
@@ -410,30 +448,45 @@
       </button>
     </div>
 
-    <!-- 2. 左右雙欄陣容安排 (iPad並排 / 手機分頁) -->
     <div class="lineup-grid">
 
-      <!-- (A) 客隊先攻卡片 (台中小海盜大叔隊) -->
+      <!-- 客隊 (先攻) 卡片 -->
       <div class="team-card" id="card-team-away">
         <div class="team-card-header">
           <div>
             <span class="team-badge-pill pill-away">先攻 (客隊)</span>
-            <input type="text" id="team-away-name" class="form-input" value="台中小海盜大叔隊" style="font-weight: 800; width: 180px; display: inline-block; margin-left: 8px;">
+            <input type="text" id="team-away-name" class="form-input" value="台中小海盜大叔隊" style="font-weight: 800; width: 170px; display: inline-block; margin-left: 6px;">
           </div>
           <div class="team-actions">
-            <button class="btn-sm" onclick="resetPiratesPreset()">載入小海盜先發</button>
+            <button class="btn-sm" onclick="resetPreset('away')">重置小海盜先發</button>
           </div>
         </div>
 
-        <!-- 先發投手選擇 -->
+        <!-- 投手選擇 -->
         <div class="pitcher-select-box">
-          <span class="pitcher-label">⚾ 先發投手 (SP)：</span>
-          <select id="away-pitcher-select" class="player-select" style="width: 220px;" onchange="syncPitcherPos('away')">
-            <!-- 由 JS 動態填充 28 人名單 -->
-          </select>
+          <div class="pitcher-flex-row">
+            <span class="pitcher-label">⚾ 先發投手 (SP)：</span>
+            <select id="away-pitcher-select" class="player-select" style="width: 200px;" onchange="onPitcherSelectChange('away', this.value)">
+            </select>
+          </div>
+          <div id="away-pitcher-custom-container" style="display: none;">
+            <div class="custom-inputs-row">
+              <input type="text" id="away-pitcher-custom-num" class="custom-input-num" placeholder="背號 #" oninput="onCustomPitcherInputChange('away')">
+              <input type="text" id="away-pitcher-custom-name" class="custom-input-name" placeholder="請輸入自訂投手姓名" oninput="onCustomPitcherInputChange('away')">
+            </div>
+          </div>
         </div>
 
-        <!-- 1~9 棒次排列表格 -->
+        <!-- 棒次數量控制列 -->
+        <div class="order-toolbar">
+          <span>目前棒次：<strong id="away-order-count-text" style="color: var(--primary);">9</strong> 棒 (可增至18棒)</span>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn-sm btn-add" onclick="addBatterSlot('away')">➕ 新增棒次</button>
+            <button class="btn-sm btn-del" onclick="removeLastBatterSlot('away')">➖ 刪除最後一棒</button>
+          </div>
+        </div>
+
+        <!-- 打線表格 -->
         <table class="lineup-table">
           <thead>
             <tr>
@@ -443,32 +496,47 @@
             </tr>
           </thead>
           <tbody id="away-lineup-tbody">
-            <!-- JS 動態產生 1~9 棒 -->
           </tbody>
         </table>
       </div>
 
-      <!-- (B) 主隊後攻卡片 (對手球隊) -->
+      <!-- 主隊 (後攻) 卡片 -->
       <div class="team-card" id="card-team-home">
         <div class="team-card-header">
           <div>
             <span class="team-badge-pill pill-home">後攻 (主隊)</span>
-            <input type="text" id="team-home-name" class="form-input" value="台中獵犬棒球隊" style="font-weight: 800; width: 180px; display: inline-block; margin-left: 8px;">
+            <input type="text" id="team-home-name" class="form-input" value="台中獵犬棒球隊" style="font-weight: 800; width: 170px; display: inline-block; margin-left: 6px;">
           </div>
           <div class="team-actions">
-            <button class="btn-sm" onclick="resetHomePreset()">載入範本陣容</button>
+            <button class="btn-sm" onclick="resetPreset('home')">重置獵犬隊先發</button>
           </div>
         </div>
 
-        <!-- 先發投手選擇 -->
+        <!-- 投手選擇 -->
         <div class="pitcher-select-box">
-          <span class="pitcher-label">⚾ 先發投手 (SP)：</span>
-          <select id="home-pitcher-select" class="player-select" style="width: 220px;" onchange="syncPitcherPos('home')">
-            <!-- JS 動態填充 -->
-          </select>
+          <div class="pitcher-flex-row">
+            <span class="pitcher-label">⚾ 先發投手 (SP)：</span>
+            <select id="home-pitcher-select" class="player-select" style="width: 200px;" onchange="onPitcherSelectChange('home', this.value)">
+            </select>
+          </div>
+          <div id="home-pitcher-custom-container" style="display: none;">
+            <div class="custom-inputs-row">
+              <input type="text" id="home-pitcher-custom-num" class="custom-input-num" placeholder="背號 #" oninput="onCustomPitcherInputChange('home')">
+              <input type="text" id="home-pitcher-custom-name" class="custom-input-name" placeholder="請輸入自訂投手姓名" oninput="onCustomPitcherInputChange('home')">
+            </div>
+          </div>
         </div>
 
-        <!-- 1~9 棒次排列表格 -->
+        <!-- 棒次數量控制列 -->
+        <div class="order-toolbar">
+          <span>目前棒次：<strong id="home-order-count-text" style="color: var(--primary);">9</strong> 棒 (可增至18棒)</span>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn-sm btn-add" onclick="addBatterSlot('home')">➕ 新增棒次</button>
+            <button class="btn-sm btn-del" onclick="removeLastBatterSlot('home')">➖ 刪除最後一棒</button>
+          </div>
+        </div>
+
+        <!-- 打線表格 -->
         <table class="lineup-table">
           <thead>
             <tr>
@@ -478,7 +546,6 @@
             </tr>
           </thead>
           <tbody id="home-lineup-tbody">
-            <!-- JS 動態產生 1~9 棒 -->
           </tbody>
         </table>
       </div>
@@ -486,21 +553,18 @@
     </div>
   </main>
 
-  <!-- 底部固定確認欄 -->
   <footer class="bottom-bar">
     <div class="validation-hint" id="validation-hint-text">
-      ✔ 先發名單檢核完畢，隨時可開打
+      ✔ 所有棒次與球員名冊皆按背號升冪排列，隨時可開打
     </div>
     <button class="start-game-btn" onclick="submitLineupAndStartGame()">
       確認名單並開打 ➔
     </button>
   </footer>
 
-  <!-- 引用名冊模組 -->
-  <script src="./roster_pirates.js"></script>
-
   <script>
-    // 守備位置清單
+
+    // 守備位置代碼表
     const POSITIONS = [
       { code: "1", label: "1 (P 投手)" },
       { code: "2", label: "2 (C 捕手)" },
@@ -514,8 +578,39 @@
       { code: "DH", label: "DH (指定打擊)" }
     ];
 
-    // 主隊範本 15 人名冊
-    const HOME_PRESET_PLAYERS = [
+    // 原始球員資料
+    const RAW_PIRATES_ROSTER = [
+      { id: "P05", number: "5",  name: "林嘉輝", defaultPos: "7", defaultOrder: 7 },
+      { id: "P09", number: "9",  name: "簡亦汛", defaultPos: "8", defaultOrder: 1 },
+      { id: "P13", number: "13", name: "高新策", defaultPos: "6", defaultOrder: 2 },
+      { id: "P14", number: "14", name: "陳俊志", defaultPos: "DH" },
+      { id: "P16", number: "16", name: "尤瑞衡", defaultPos: "DH" },
+      { id: "P18", number: "18", name: "黃思學", defaultPos: "1", defaultOrder: 9 },
+      { id: "P21", number: "21", name: "郭致宏", defaultPos: "DH" },
+      { id: "P22", number: "22", name: "鄭隆達", defaultPos: "4", defaultOrder: 6 },
+      { id: "P23", number: "23", name: "楊敏達", defaultPos: "3", defaultOrder: 4 },
+      { id: "P24", number: "24", name: "李喆欽", defaultPos: "5", defaultOrder: 5 },
+      { id: "P31", number: "31", name: "黃鈞晃", defaultPos: "DH" },
+      { id: "P35", number: "35", name: "江定原", defaultPos: "DH" },
+      { id: "P38", number: "38", name: "陳郁方", defaultPos: "DH" },
+      { id: "P39", number: "39", name: "彭丞宇", defaultPos: "DH" },
+      { id: "P58", number: "58", name: "黃威銘", defaultPos: "2", defaultOrder: 8 },
+      { id: "P61", number: "61", name: "陳炫男", defaultPos: "DH" },
+      { id: "P63", number: "63", name: "卓宥男", defaultPos: "DH" },
+      { id: "P68", number: "68", name: "楊昌憲", defaultPos: "DH" },
+      { id: "P70", number: "70", name: "高慶霖", defaultPos: "DH" },
+      { id: "P71", number: "71", name: "林子強", defaultPos: "DH" },
+      { id: "P73", number: "73", name: "陳信宇", defaultPos: "DH" },
+      { id: "P74", number: "74", name: "楊明程", defaultPos: "DH" },
+      { id: "P77", number: "77", name: "張季暐", defaultPos: "DH" },
+      { id: "P84", number: "84", name: "譚翔",   defaultPos: "9", defaultOrder: 3 },
+      { id: "P86", number: "86", name: "詹宗憲", defaultPos: "DH" },
+      { id: "P89", number: "89", name: "林威志", defaultPos: "DH" },
+      { id: "P99", number: "99", name: "王維新", defaultPos: "DH" },
+      { id: "P00", number: "00", name: "顏平和", defaultPos: "DH" }
+    ];
+
+    const RAW_HOME_ROSTER = [
       { id: "H01", number: "7",  name: "張志豪", defaultPos: "8", defaultOrder: 1 },
       { id: "H02", number: "9",  name: "王威晨", defaultPos: "5", defaultOrder: 2 },
       { id: "H03", number: "39", name: "詹子賢", defaultPos: "7", defaultOrder: 3 },
@@ -524,18 +619,35 @@
       { id: "H06", number: "4",  name: "陳文杰", defaultPos: "9", defaultOrder: 6 },
       { id: "H07", number: "74", name: "許躍騰", defaultPos: "2", defaultOrder: 7 },
       { id: "H08", number: "66", name: "黃韋盛", defaultPos: "4", defaultOrder: 8 },
-      { id: "H09", number: "19", name: "鄭凱文", defaultPos: "1", defaultOrder: 9 }, // 投手
-      { id: "H10", number: "1",  name: "陳子豪", defaultPos: "BN" },
-      { id: "H11", number: "11", name: "廖乙忠", defaultPos: "BN" },
-      { id: "H12", number: "42", name: "陳家駒", defaultPos: "BN" }
+      { id: "H09", number: "19", name: "鄭凱文", defaultPos: "1", defaultOrder: 9 },
+      { id: "H10", number: "1",  name: "陳子豪", defaultPos: "DH" },
+      { id: "H11", number: "11", name: "廖乙忠", defaultPos: "DH" },
+      { id: "H12", number: "42", name: "陳家駒", defaultPos: "DH" }
     ];
 
-    let currentDevice = 'ipad'; // 'ipad' | 'mobile'
-    let activeMobileTeam = 'away'; // 'away' | 'home'
+    // 依背號升冪排序之輔助函式 (#00 < #0 < #1 < #2 ...)
+    function getNumberVal(numStr) {
+      if (numStr === '00') return -0.5;
+      const parsed = parseInt(numStr, 10);
+      return isNaN(parsed) ? 999 : parsed;
+    }
 
-    // 當前先發狀態
+    function sortRosterByNumber(roster) {
+      return [...roster].sort((a, b) => getNumberVal(a.number) - getNumberVal(b.number));
+    }
+
+    const PIRATES_ROSTER = sortRosterByNumber(RAW_PIRATES_ROSTER);
+    const HOME_ROSTER = sortRosterByNumber(RAW_HOME_ROSTER);
+
+    // 全域陣容狀態
+    let currentDevice = 'ipad';
+    let activeMobileTeam = 'away';
+
     let awayLineupState = [];
     let homeLineupState = [];
+
+    let awayPitcherState = { playerId: "P18", customNum: "", customName: "" };
+    let homePitcherState = { playerId: "H09", customNum: "", customName: "" };
 
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('meta-date').value = new Date().toISOString().split('T')[0];
@@ -544,7 +656,31 @@
       renderAll();
     });
 
-    // 切換裝置視角
+    // 【修正重點】不再以 defaultOrder 過濾名單，而是取背號排序好的前 9 位球員作為 1-9 棒
+    function initAwayLineup() {
+      const starters = PIRATES_ROSTER.slice(0, 9);
+      awayLineupState = starters.map((p, idx) => ({
+        order: idx + 1,
+        playerId: p.id,
+        customNum: "",
+        customName: "",
+        pos: String(idx + 1)
+      }));
+      awayPitcherState = { playerId: "P18", customNum: "", customName: "" };
+    }
+
+    function initHomeLineup() {
+      const starters = HOME_ROSTER.slice(0, 9);
+      homeLineupState = starters.map((p, idx) => ({
+        order: idx + 1,
+        playerId: p.id,
+        customNum: "",
+        customName: "",
+        pos: String(idx + 1)
+      }));
+      homePitcherState = { playerId: "H09", customNum: "", customName: "" };
+    }
+
     function setDeviceMode(mode) {
       currentDevice = mode;
       const container = document.getElementById('main-container');
@@ -581,65 +717,107 @@
       document.getElementById('card-team-home').style.display = (activeMobileTeam === 'home') ? 'block' : 'none';
     }
 
-    // 初始化客隊（台中小海盜 28 人）
-    function initAwayLineup() {
-      const starters = PIRATES_ROSTER.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder);
-      awayLineupState = starters.map((p, idx) => ({
-        order: idx + 1,
-        playerId: p.id,
-        pos: p.defaultPos
-      }));
-    }
-
-    // 初始化主隊（對手）
-    function initHomeLineup() {
-      const starters = HOME_PRESET_PLAYERS.filter(p => p.defaultOrder).sort((a, b) => a.defaultOrder - b.defaultOrder);
-      homeLineupState = starters.map((p, idx) => ({
-        order: idx + 1,
-        playerId: p.id,
-        pos: p.defaultPos
-      }));
-    }
-
     function renderAll() {
-      renderPitcherSelect('away');
-      renderPitcherSelect('home');
+      renderPitcherSection('away');
+      renderPitcherSection('home');
       renderLineupTable('away');
       renderLineupTable('home');
     }
 
-    // 渲染先發投手下拉選單
-    function renderPitcherSelect(teamKey) {
-      const select = document.getElementById(`${teamKey}-pitcher-select`);
-      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_PRESET_PLAYERS;
+    function addBatterSlot(teamKey) {
+      const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
+      if (lineup.length >= 18) {
+        alert("最多支援擴充至 18 棒！");
+        return;
+      }
 
-      select.innerHTML = roster.map(p => `
-        <option value="${p.id}" ${p.defaultPos === '1' ? 'selected' : ''}>
+      const nextOrder = lineup.length + 1;
+      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_ROSTER;
+      const usedIds = lineup.map(item => item.playerId);
+      const availablePlayer = roster.find(p => !usedIds.includes(p.id)) || roster[0];
+
+      lineup.push({
+        order: nextOrder,
+        playerId: availablePlayer ? availablePlayer.id : "CUSTOM",
+        customNum: "",
+        customName: "",
+        pos: "DH"
+      });
+
+      renderLineupTable(teamKey);
+    }
+
+    function removeLastBatterSlot(teamKey) {
+      const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
+      if (lineup.length <= 9) {
+        alert("最少須保留 9 棒名單！");
+        return;
+      }
+
+      lineup.pop();
+      renderLineupTable(teamKey);
+    }
+
+    function renderPitcherSection(teamKey) {
+      const select = document.getElementById(`${teamKey}-pitcher-select`);
+      const container = document.getElementById(`${teamKey}-pitcher-custom-container`);
+      const state = (teamKey === 'away') ? awayPitcherState : homePitcherState;
+      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_ROSTER;
+
+      let optionsHtml = roster.map(p => `
+        <option value="${p.id}" ${p.id === state.playerId ? 'selected' : ''}>
           #${p.number} ${p.name}
         </option>
       `).join('');
+
+      optionsHtml += `<option value="CUSTOM" ${state.playerId === 'CUSTOM' ? 'selected' : ''}>✏️ 自訂投手...</option>`;
+      select.innerHTML = optionsHtml;
+
+      if (state.playerId === 'CUSTOM') {
+        container.style.display = 'block';
+        document.getElementById(`${teamKey}-pitcher-custom-num`).value = state.customNum || '';
+        document.getElementById(`${teamKey}-pitcher-custom-name`).value = state.customName || '';
+      } else {
+        container.style.display = 'none';
+      }
     }
 
-    // 渲染 1~9 棒次排列表格
+    function onPitcherSelectChange(teamKey, val) {
+      const state = (teamKey === 'away') ? awayPitcherState : homePitcherState;
+      state.playerId = val;
+      renderPitcherSection(teamKey);
+    }
+
+    function onCustomPitcherInputChange(teamKey) {
+      const state = (teamKey === 'away') ? awayPitcherState : homePitcherState;
+      state.customNum = document.getElementById(`${teamKey}-pitcher-custom-num`).value.trim();
+      state.customName = document.getElementById(`${teamKey}-pitcher-custom-name`).value.trim();
+    }
+
     function renderLineupTable(teamKey) {
       const tbody = document.getElementById(`${teamKey}-lineup-tbody`);
+      const countText = document.getElementById(`${teamKey}-order-count-text`);
       const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
-      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_PRESET_PLAYERS;
+      const roster = (teamKey === 'away') ? PIRATES_ROSTER : HOME_ROSTER;
+
+      countText.textContent = lineup.length;
 
       tbody.innerHTML = lineup.map((slot, idx) => {
-        // 球員選單
-        const playerOptions = roster.map(p => `
+        let playerOptions = roster.map(p => `
           <option value="${p.id}" ${p.id === slot.playerId ? 'selected' : ''}>
             #${p.number} ${p.name}
           </option>
         `).join('');
 
-        // 守位選單
+        playerOptions += `<option value="CUSTOM" ${slot.playerId === 'CUSTOM' ? 'selected' : ''}>✏️ 自訂球員...</option>`;
+
         const posOptions = POSITIONS.map(pos => `
           <option value="${pos.code}" ${pos.code === slot.pos ? 'selected' : ''}>
             ${pos.label}
           </option>
         `).join('');
+
+        const isCustom = slot.playerId === 'CUSTOM';
 
         return `
           <tr>
@@ -648,6 +826,12 @@
               <select class="player-select" onchange="onPlayerChange('${teamKey}', ${idx}, this.value)">
                 ${playerOptions}
               </select>
+              ${isCustom ? `
+                <div class="custom-inputs-row">
+                  <input type="text" class="custom-input-num" placeholder="背號 #" value="${slot.customNum || ''}" oninput="onCustomPlayerInputChange('${teamKey}', ${idx}, 'num', this.value)">
+                  <input type="text" class="custom-input-name" placeholder="請輸入球員姓名" value="${slot.customName || ''}" oninput="onCustomPlayerInputChange('${teamKey}', ${idx}, 'name', this.value)">
+                </div>
+              ` : ''}
             </td>
             <td>
               <select class="pos-select" onchange="onPosChange('${teamKey}', ${idx}, this.value)">
@@ -662,6 +846,13 @@
     function onPlayerChange(teamKey, idx, newPlayerId) {
       const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
       lineup[idx].playerId = newPlayerId;
+      renderLineupTable(teamKey);
+    }
+
+    function onCustomPlayerInputChange(teamKey, idx, field, val) {
+      const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
+      if (field === 'num') lineup[idx].customNum = val.trim();
+      if (field === 'name') lineup[idx].customName = val.trim();
     }
 
     function onPosChange(teamKey, idx, newPos) {
@@ -669,55 +860,82 @@
       lineup[idx].pos = newPos;
     }
 
-    function resetPiratesPreset() {
-      initAwayLineup();
-      renderLineupTable('away');
-      renderPitcherSelect('away');
-      alert("已重新載入台中小海盜大叔隊建議先發陣容！");
+    function resetPreset(teamKey) {
+      if (teamKey === 'away') {
+        initAwayLineup();
+        alert("已重新載入台中小海盜預設建議先發陣容 (依照背號排序)！");
+      } else {
+        initHomeLineup();
+        alert("已重置為獵犬隊預設先發陣容 (依照背號排序)！");
+      }
+      renderAll();
     }
 
-    function resetHomePreset() {
-      initHomeLineup();
-      renderLineupTable('home');
-      renderPitcherSelect('home');
-      alert("已重置為範本先發陣容！");
-    }
-
-    // 送出先發名單並進入 baseball_scorebook_app.html
     function submitLineupAndStartGame() {
-      // 1. 組裝客隊先發
       const awayStarters = awayLineupState.map(slot => {
-        const p = PIRATES_ROSTER.find(item => item.id === slot.playerId);
-        return {
-          order: slot.order,
-          id: p.id,
-          number: p.number,
-          name: p.name,
-          pos: slot.pos
-        };
+        if (slot.playerId === 'CUSTOM') {
+          return {
+            order: slot.order,
+            id: "CUSTOM_" + slot.order,
+            number: slot.customNum || "0",
+            name: slot.customName || `自訂球員${slot.order}`,
+            pos: slot.pos
+          };
+        } else {
+          const p = PIRATES_ROSTER.find(item => item.id === slot.playerId) || PIRATES_ROSTER[0];
+          return {
+            order: slot.order,
+            id: p.id,
+            number: p.number,
+            name: p.name,
+            pos: slot.pos
+          };
+        }
       });
 
-      // 取得客隊投手
-      const awayPitcherId = document.getElementById('away-pitcher-select').value;
-      const awayPitcher = PIRATES_ROSTER.find(p => p.id === awayPitcherId) || PIRATES_ROSTER[0];
+      let awayPitcher = {};
+      if (awayPitcherState.playerId === 'CUSTOM') {
+        awayPitcher = {
+          name: awayPitcherState.customName || "自訂投手",
+          number: awayPitcherState.customNum || "99"
+        };
+      } else {
+        const p = PIRATES_ROSTER.find(item => item.id === awayPitcherState.playerId) || PIRATES_ROSTER[0];
+        awayPitcher = { name: p.name, number: p.number };
+      }
 
-      // 2. 組裝主隊先發
       const homeStarters = homeLineupState.map(slot => {
-        const p = HOME_PRESET_PLAYERS.find(item => item.id === slot.playerId);
-        return {
-          order: slot.order,
-          id: p.id,
-          number: p.number,
-          name: p.name,
-          pos: slot.pos
-        };
+        if (slot.playerId === 'CUSTOM') {
+          return {
+            order: slot.order,
+            id: "CUSTOM_" + slot.order,
+            number: slot.customNum || "0",
+            name: slot.customName || `自訂球員${slot.order}`,
+            pos: slot.pos
+          };
+        } else {
+          const p = HOME_ROSTER.find(item => item.id === slot.playerId) || HOME_ROSTER[0];
+          return {
+            order: slot.order,
+            id: p.id,
+            number: p.number,
+            name: p.name,
+            pos: slot.pos
+          };
+        }
       });
 
-      // 取得主隊投手
-      const homePitcherId = document.getElementById('home-pitcher-select').value;
-      const homePitcher = HOME_PRESET_PLAYERS.find(p => p.id === homePitcherId) || HOME_PRESET_PLAYERS[8];
+      let homePitcher = {};
+      if (homePitcherState.playerId === 'CUSTOM') {
+        homePitcher = {
+          name: homePitcherState.customName || "自訂投手",
+          number: homePitcherState.customNum || "99"
+        };
+      } else {
+        const p = HOME_ROSTER.find(item => item.id === homePitcherState.playerId) || HOME_ROSTER[0];
+        homePitcher = { name: p.name, number: p.number };
+      }
 
-      // 3. 賽事資訊
       const matchSetup = {
         meta: {
           title: document.getElementById('meta-title').value,
@@ -729,20 +947,18 @@
         away: {
           name: document.getElementById('team-away-name').value,
           lineup: awayStarters,
-          pitcher: { name: awayPitcher.name, number: awayPitcher.number }
+          pitcher: awayPitcher
         },
         home: {
           name: document.getElementById('team-home-name').value,
           lineup: homeStarters,
-          pitcher: { name: homePitcher.name, number: homePitcher.number }
+          pitcher: homePitcher
         },
         timestamp: Date.now()
       };
 
-      // 存入 localStorage 供記分網頁讀取
       localStorage.setItem('baseball_game_setup', JSON.stringify(matchSetup));
-
-      // 跳轉至比賽紀錄系統
+      alert(`攻守名單排定成功！客隊 ${awayStarters.length} 棒 / 主隊 ${homeStarters.length} 棒，即將進入計分系統。`);
       window.location.href = './baseball_scorebook_app.html';
     }
   </script>

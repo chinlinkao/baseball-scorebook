@@ -1,6 +1,6 @@
 /**
  * Baseball Scoring Engine (棒球計分與規則狀態機)
- * 完整支援早稻田式計分規範、雙殺守備 (DP)、跑者進壘邏輯、打擊/投手數據自動統計、雙重平衡檢核
+ * 完整支援早稻田式計分規範、雙殺守備 (DP)、跑者進壘邏輯、盜壘 (SB/CS) 紀錄、打擊/投手數據自動統計、雙重平衡檢核、守備調動與更換投手模組
  */
 
 (function (global, factory) {
@@ -154,6 +154,8 @@
       case 'SF':
         adv.batter = 'OUT';
         if (bases[3]) adv.runners[3] = 'SCORE';
+        if (bases[2]) adv.runners[2] = 'STAY';
+        if (bases[1]) adv.runners[1] = 'STAY';
         break;
       case 'Ʞ':
         adv.batter = '1B';
@@ -169,28 +171,82 @@
     return adv;
   }
 
-  function markRunnerOutInMatrix(game, teamKey, playerIdx, inning, targetBaseName, fieldCode, outNumber, isDoublePlay) {
+  function markRunnerOutInMatrix(game, teamKey, runner, targetBaseName, fieldCode, outNumber, isDoublePlay) {
+    if (!runner) return;
+    const { playerIdx, startInning, playerKey } = runner;
     const matrix = game.scoreMatrix[teamKey];
-    if (matrix && matrix[playerIdx] && matrix[playerIdx][inning]) {
-      const cell = matrix[playerIdx][inning];
-      cell.center = cell.center || {};
-      cell.center.outNumber = outNumber;
-      if (isDoublePlay) {
-        cell.doublePlay = true;
-      }
+    if (!matrix || !matrix[playerIdx] || !matrix[playerIdx][startInning]) return;
 
-      if (targetBaseName === 'second' || targetBaseName === '2' || targetBaseName === 1) {
-        cell.interruptedPath = { from: 'first', to: 'second', ratio: 0.5 };
-        cell.notations = cell.notations || {};
-        cell.notations.second = { text: fieldCode || 'DP' };
-      } else if (targetBaseName === 'third' || targetBaseName === '3' || targetBaseName === 2) {
-        cell.interruptedPath = { from: 'second', to: 'third', ratio: 0.5 };
-        cell.notations = cell.notations || {};
-        cell.notations.third = { text: fieldCode || 'DP' };
-      } else if (targetBaseName === 'home' || targetBaseName === '4' || targetBaseName === 3) {
-        cell.interruptedPath = { from: 'third', to: 'home', ratio: 0.5 };
-        cell.notations = cell.notations || {};
-        cell.notations.home = { text: fieldCode || 'DP' };
+    const cell = matrix[playerIdx][startInning];
+    cell.center = cell.center || {};
+    cell.center.outNumber = outNumber;
+    if (isDoublePlay) {
+      cell.doublePlay = true;
+    }
+
+    if (targetBaseName === 'second' || targetBaseName === '2' || targetBaseName === 1) {
+      cell.interruptedPath = { from: 'first', to: 'second', ratio: 0.5 };
+      cell.notations = cell.notations || {};
+      cell.notations.second = { text: fieldCode || 'CS' };
+    } else if (targetBaseName === 'third' || targetBaseName === '3' || targetBaseName === 2) {
+      cell.interruptedPath = { from: 'second', to: 'third', ratio: 0.5 };
+      cell.notations = cell.notations || {};
+      cell.notations.third = { text: fieldCode || 'CS' };
+    } else if (targetBaseName === 'home' || targetBaseName === '4' || targetBaseName === 3) {
+      cell.interruptedPath = { from: 'third', to: 'home', ratio: 0.5 };
+      cell.notations = cell.notations || {};
+      cell.notations.home = { text: fieldCode || 'CS' };
+    }
+
+    if (game.enhancedMatrix && game.enhancedMatrix[teamKey] && playerKey) {
+      const enhArr = game.enhancedMatrix[teamKey][playerKey]?.[startInning];
+      if (enhArr && enhArr.length > 0) {
+        enhArr[enhArr.length - 1] = JSON.parse(JSON.stringify(cell));
+      }
+    }
+  }
+
+  function updateRunnerAdvancementInMatrix(game, teamKey, runner, targetBase, respOrder, notationText = '') {
+    if (!runner) return;
+    const { playerIdx, startInning, playerKey } = runner;
+    const matrix = game.scoreMatrix[teamKey];
+    if (!matrix || !matrix[playerIdx] || !matrix[playerIdx][startInning]) return;
+
+    const cell = matrix[playerIdx][startInning];
+    cell.paths = cell.paths || {};
+    cell.notations = cell.notations || {};
+    cell.center = cell.center || {};
+
+    if (targetBase === 2 || targetBase === '2' || targetBase === 'second') {
+      cell.paths.second = true;
+      cell.notations.second = {
+        text: notationText || (cell.notations.second ? cell.notations.second.text : ''),
+        respBatter: respOrder
+      };
+    } else if (targetBase === 3 || targetBase === '3' || targetBase === 'third') {
+      cell.paths.second = true;
+      cell.paths.third = true;
+      cell.notations.third = {
+        text: notationText || (cell.notations.third ? cell.notations.third.text : ''),
+        respBatter: respOrder
+      };
+    } else if (targetBase === 4 || targetBase === 'home' || targetBase === 'SCORE') {
+      cell.paths.second = true;
+      cell.paths.third = true;
+      cell.paths.home = true;
+      cell.center.isRun = true;
+      delete cell.center.isLOB;
+      delete cell.center.outNumber;
+      cell.notations.home = {
+        text: notationText || (cell.notations.home ? cell.notations.home.text : ''),
+        respBatter: respOrder
+      };
+    }
+
+    if (game.enhancedMatrix && game.enhancedMatrix[teamKey] && playerKey) {
+      const enhArr = game.enhancedMatrix[teamKey][playerKey]?.[startInning];
+      if (enhArr && enhArr.length > 0) {
+        enhArr[enhArr.length - 1] = JSON.parse(JSON.stringify(cell));
       }
     }
   }
@@ -279,31 +335,40 @@
       if (act === 'SCORE') {
         runsScoredThisPlay++;
         rbiCount++;
-        updateRunnerScoredInMatrix(game, battingTeamKey, runner.playerIdx, runner.startInning, batter.order);
+        updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 'SCORE', batter.order);
       } else if (act === 'ADV_3') {
         nextBases[3] = runner;
+        updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 3, batter.order);
       } else if (act === 'ADV_2') {
         nextBases[2] = runner;
+        updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 2, batter.order);
       } else if (act === 'STAY') {
         nextBases[base] = runner;
       } else if (act === 'OUT') {
         s.outs++;
         const targetBaseName = (base === 1) ? 'second' : (base === 2) ? 'third' : 'home';
         const runnerCode = runnerFieldCodes[base] || (actualDP ? 'DP' : 'OUT');
-        markRunnerOutInMatrix(game, battingTeamKey, runner.playerIdx, runner.startInning, targetBaseName, runnerCode, s.outs, actualDP);
+        markRunnerOutInMatrix(game, battingTeamKey, runner, targetBaseName, runnerCode, s.outs, actualDP);
       }
     });
 
     const batterAdv = advances.batter || resultType;
+    const batterRunnerObj = {
+      player: batter,
+      playerIdx: currentOrderIdx,
+      startInning: s.inning,
+      playerKey: batter.playerKey
+    };
+
     if (batterAdv === 'HR') {
       runsScoredThisPlay++;
       rbiCount++;
     } else if (batterAdv === '3B') {
-      nextBases[3] = { player: batter, playerIdx: currentOrderIdx, startInning: s.inning };
+      nextBases[3] = batterRunnerObj;
     } else if (batterAdv === '2B') {
-      nextBases[2] = { player: batter, playerIdx: currentOrderIdx, startInning: s.inning };
+      nextBases[2] = batterRunnerObj;
     } else if (batterAdv === '1B' || isBB || isHBP || isError) {
-      nextBases[1] = { player: batter, playerIdx: currentOrderIdx, startInning: s.inning };
+      nextBases[1] = batterRunnerObj;
     } else {
       s.outs++;
     }
@@ -320,7 +385,7 @@
     cellNotations.first = {
       text: hitText,
       trajectory: trajectory !== 'none' ? trajectory : undefined,
-      isSacrifice: isSAC
+      isSacrifice: isSAC || isSF
     };
 
     if (resultType === '2B') cellNotations.second = { text: '2B' };
@@ -395,9 +460,9 @@
     s.bases = nextBases;
 
     if (battingTeamKey === 'away') {
-      s.awayOrderIdx = (s.awayOrderIdx + 1) % 9;
+      s.awayOrderIdx = (s.awayOrderIdx + 1) % battingTeam.lineup.length;
     } else {
-      s.homeOrderIdx = (s.homeOrderIdx + 1) % 9;
+      s.homeOrderIdx = (s.homeOrderIdx + 1) % battingTeam.lineup.length;
     }
 
     let inningChanged = false;
@@ -409,7 +474,7 @@
       [1, 2, 3].forEach(b => {
         if (s.bases[b]) {
           halfInningLOB++;
-          markLOBInMatrix(game, battingTeamKey, s.bases[b].playerIdx, s.bases[b].startInning);
+          markLOBInMatrix(game, battingTeamKey, s.bases[b], s.bases[b].startInning);
         }
       });
       if (s.isTop) game.lineScore.away.lobs += halfInningLOB;
@@ -454,6 +519,299 @@
     };
   }
 
+  function recordStolenBase(game, stolenPayload) {
+    saveSnapshot(game);
+
+    const s = game.status;
+    const battingTeamKey = s.isTop ? 'away' : 'home';
+    const fieldingTeamKey = s.isTop ? 'home' : 'away';
+    const battingTeam = game.teams[battingTeamKey];
+    const fieldingTeam = game.teams[fieldingTeamKey];
+    const currentOrderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+    const batter = battingTeam.lineup[currentOrderIdx];
+    const pitcher = fieldingTeam.pitchers[fieldingTeam.currentPitcherIdx] || { name: "投手", number: "1" };
+
+    const { steals = {} } = stolenPayload;
+
+    let runsScoredThisPlay = 0;
+    const pbpDetails = [];
+    const newBases = { 1: s.bases[1], 2: s.bases[2], 3: s.bases[3] };
+
+    [3, 2, 1].forEach(base => {
+      const runner = s.bases[base];
+      if (!runner) return;
+      const act = steals[base];
+      if (!act) return;
+
+      if (act === 'SB_2' && base === 1) {
+        updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 2, batter.order, 'SB');
+        newBases[2] = runner;
+        newBases[1] = null;
+        pbpDetails.push(`跑者 ${runner.player.name} 成功盜上二壘 (SB)`);
+      } else if (act === 'SB_3' && (base === 1 || base === 2)) {
+        updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 3, batter.order, 'SB');
+        newBases[3] = runner;
+        if (base === 2) newBases[2] = null;
+        if (base === 1) newBases[1] = null;
+        pbpDetails.push(`跑者 ${runner.player.name} 成功盜上三壘 (SB)`);
+      } else if (act === 'SB_H' && (base === 1 || base === 2 || base === 3)) {
+        updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 'SCORE', batter.order, 'SB');
+        newBases[base] = null;
+        runsScoredThisPlay++;
+        pbpDetails.push(`跑者 ${runner.player.name} 成功發動盜壘攻回本壘得分 (SB)`);
+      } else if (act === 'CS_2' && base === 1) {
+        s.outs++;
+        newBases[1] = null;
+        markRunnerOutInMatrix(game, battingTeamKey, runner, 'second', 'CS 2-4', s.outs, false);
+        pbpDetails.push(`跑者 ${runner.player.name} 企圖盜二壘遭阻殺出局 (CS)`);
+      } else if (act === 'CS_3' && (base === 1 || base === 2)) {
+        s.outs++;
+        if (base === 2) newBases[2] = null;
+        if (base === 1) newBases[1] = null;
+        markRunnerOutInMatrix(game, battingTeamKey, runner, 'third', 'CS 2-5', s.outs, false);
+        pbpDetails.push(`跑者 ${runner.player.name} 企圖盜三壘遭阻殺出局 (CS)`);
+      } else if (act === 'CS_H' && (base === 1 || base === 2 || base === 3)) {
+        s.outs++;
+        newBases[base] = null;
+        markRunnerOutInMatrix(game, battingTeamKey, runner, 'home', 'CS 2-2', s.outs, false);
+        pbpDetails.push(`跑者 ${runner.player.name} 企圖盜本壘遭阻殺出局 (CS)`);
+      }
+    });
+
+    s.bases = newBases;
+
+    if (runsScoredThisPlay > 0) {
+      if (s.isTop) {
+        s.scoreAway += runsScoredThisPlay;
+        ensureInningLineScore(game.lineScore.away, s.inning);
+        game.lineScore.away.innings[s.inning - 1] += runsScoredThisPlay;
+        game.lineScore.away.runs += runsScoredThisPlay;
+      } else {
+        s.scoreHome += runsScoredThisPlay;
+        ensureInningLineScore(game.lineScore.home, s.inning);
+        game.lineScore.home.innings[s.inning - 1] += runsScoredThisPlay;
+        game.lineScore.home.runs += runsScoredThisPlay;
+      }
+      if (pitcher) {
+        pitcher.r = (pitcher.r || 0) + runsScoredThisPlay;
+        pitcher.er = (pitcher.er || 0) + runsScoredThisPlay;
+      }
+    }
+
+    let inningChanged = false;
+    if (s.outs >= 3) {
+      inningChanged = true;
+      s.outs = 0;
+      s.bases = { 1: null, 2: null, 3: null };
+      if (s.isTop) {
+        s.isTop = false;
+      } else {
+        s.isTop = true;
+        s.inning++;
+      }
+    }
+
+    const inningName = `${s.inning}局${s.isTop ? '上' : '下'}`;
+    const pbpMessage = `【${inningName}】⚡ 跑壘戰術：${pbpDetails.join('；')}！`;
+    game.pbpEvents.unshift({
+      id: "PBP_" + Date.now(),
+      text: pbpMessage,
+      inning: s.inning,
+      isTop: s.isTop,
+      runs: runsScoredThisPlay,
+      scoreSnapshot: `${s.scoreAway}:${s.scoreHome}`
+    });
+
+    return {
+      success: true,
+      inningChanged,
+      runsScoredThisPlay,
+      currentScore: { away: s.scoreAway, home: s.scoreHome }
+    };
+  }
+
+  function changeDefensiveLineup(game, changePayload) {
+    saveSnapshot(game);
+
+    const s = game.status;
+    const fieldingTeamKey = s.isTop ? 'home' : 'away';
+    const team = game.teams[fieldingTeamKey];
+    const pbpDetails = [];
+
+    const { swaps = [], substitutions = [], pitcherChange = null } = changePayload;
+
+    swaps.forEach(({ orderIdxA, orderIdxB }) => {
+      const pA = team.lineup[orderIdxA];
+      const pB = team.lineup[orderIdxB];
+      if (pA && pB) {
+        if (!pA.posHistory) pA.posHistory = [pA.pos];
+        if (!pB.posHistory) pB.posHistory = [pB.pos];
+
+        const tempPos = pA.pos;
+        pA.pos = pB.pos;
+        pB.pos = tempPos;
+
+        pA.posHistory.push(pA.pos);
+        pB.posHistory.push(pB.pos);
+
+        pbpDetails.push(`${pA.name}(#${pA.number}) 與 ${pB.name}(#${pB.number}) 守位對調 (${pA.pos} ⇄ ${pB.pos})`);
+
+        [pA, pB].forEach(player => {
+          if (!game.enhancedMatrix) game.enhancedMatrix = { away: {}, home: {} };
+          if (!game.enhancedMatrix[fieldingTeamKey]) game.enhancedMatrix[fieldingTeamKey] = {};
+          if (!game.enhancedMatrix[fieldingTeamKey][player.playerKey]) {
+            game.enhancedMatrix[fieldingTeamKey][player.playerKey] = {};
+          }
+          const cellArr = game.enhancedMatrix[fieldingTeamKey][player.playerKey][s.inning] || [];
+          cellArr.push({
+            isSubstitution: true,
+            subType: 'DEF',
+            pitches: [],
+            paths: {},
+            notations: {}
+          });
+          game.enhancedMatrix[fieldingTeamKey][player.playerKey][s.inning] = cellArr;
+        });
+      }
+    });
+
+    substitutions.forEach(({ orderIdx, newPlayer, newPos }) => {
+      const slot = team.orderSlots[orderIdx];
+      const oldPlayer = slot[slot.length - 1];
+      const subIdx = slot.length;
+      const targetPos = newPos || oldPlayer.pos || "代";
+
+      const subPlayerObj = {
+        id: newPlayer.id || ("P_SUB_" + Date.now()),
+        number: newPlayer.number,
+        name: newPlayer.name,
+        pos: targetPos,
+        posHistory: [targetPos],
+        order: orderIdx + 1,
+        isSub: true,
+        playerKey: `${fieldingTeamKey}_order${orderIdx}_sub${subIdx}`
+      };
+
+      slot.push(subPlayerObj);
+      team.lineup[orderIdx] = subPlayerObj;
+      pbpDetails.push(`#${subPlayerObj.number} ${subPlayerObj.name} 上場代守(${getPositionZhName(subPlayerObj.pos)})，替換 #${oldPlayer.number} ${oldPlayer.name}`);
+
+      if (!game.enhancedMatrix) game.enhancedMatrix = { away: {}, home: {} };
+      if (!game.enhancedMatrix[fieldingTeamKey]) game.enhancedMatrix[fieldingTeamKey] = {};
+      if (!game.enhancedMatrix[fieldingTeamKey][subPlayerObj.playerKey]) {
+        game.enhancedMatrix[fieldingTeamKey][subPlayerObj.playerKey] = {};
+      }
+      const cellArr = game.enhancedMatrix[fieldingTeamKey][subPlayerObj.playerKey][s.inning] || [];
+      cellArr.push({
+        isSubstitution: true,
+        subType: 'DEF',
+        pitches: [],
+        paths: {},
+        notations: {}
+      });
+      game.enhancedMatrix[fieldingTeamKey][subPlayerObj.playerKey][s.inning] = cellArr;
+    });
+
+    if (pitcherChange && pitcherChange.newPitcher) {
+      const newPitcher = pitcherChange.newPitcher;
+      const newPitcherStats = createPitcherStats(newPitcher);
+      team.pitchers.push(newPitcherStats);
+      team.currentPitcherIdx = team.pitchers.length - 1;
+
+      const p1OrderIdx = team.lineup.findIndex(p => String(p.pos) === '1');
+      if (p1OrderIdx !== -1) {
+        const slot = team.orderSlots[p1OrderIdx];
+        const oldPlayer = slot[slot.length - 1];
+        const subIdx = slot.length;
+
+        const subPitcherObj = {
+          id: newPitcher.id || ("P_SUB_" + Date.now()),
+          number: newPitcher.number,
+          name: newPitcher.name,
+          pos: "1",
+          posHistory: ["1"],
+          order: p1OrderIdx + 1,
+          isSub: true,
+          playerKey: `${fieldingTeamKey}_order${p1OrderIdx}_sub${subIdx}`
+        };
+
+        slot.push(subPitcherObj);
+        team.lineup[p1OrderIdx] = subPitcherObj;
+      }
+
+      const battingTeamKey = s.isTop ? 'away' : 'home';
+      const orderIdx = s.isTop ? s.awayOrderIdx : s.homeOrderIdx;
+      const currentBatter = game.teams[battingTeamKey].lineup[orderIdx];
+
+      if (currentBatter) {
+        if (!game.enhancedMatrix) game.enhancedMatrix = { away: {}, home: {} };
+        if (!game.enhancedMatrix[battingTeamKey]) game.enhancedMatrix[battingTeamKey] = {};
+        if (!game.enhancedMatrix[battingTeamKey][currentBatter.playerKey]) {
+          game.enhancedMatrix[battingTeamKey][currentBatter.playerKey] = {};
+        }
+        const cellArr = game.enhancedMatrix[battingTeamKey][currentBatter.playerKey][s.inning] || [];
+        cellArr.push({
+          pitcherChangeTop: true,
+          pitcherNumber: newPitcher.number,
+          pitches: [],
+          paths: {},
+          notations: {}
+        });
+        game.enhancedMatrix[battingTeamKey][currentBatter.playerKey][s.inning] = cellArr;
+      }
+
+      if (pitcherChange.timing === 'INNING_START') {
+        s.pendingPitcherChangeTop = newPitcher.number;
+      } else if (pitcherChange.timing === 'IN_BATTER') {
+        s.pendingPitcherChangeAtPitch = {
+          pitchIndex: s.currentPitches.length,
+          number: newPitcher.number
+        };
+      }
+      pbpDetails.push(`防守方更換投手：#${newPitcher.number} ${newPitcher.name} 上場救援`);
+    }
+
+    // 【新增邏輯】處理「場上球員互換守位」導致更換投手的情況，同步更新投手數據統計
+    const currentPitcherPlayer = team.lineup.find(p => String(p.pos) === '1');
+    if (currentPitcherPlayer) {
+      const activePitcherStats = team.pitchers[team.currentPitcherIdx];
+      const isSamePitcher = activePitcherStats &&
+                            activePitcherStats.name === currentPitcherPlayer.name &&
+                            String(activePitcherStats.number) === String(currentPitcherPlayer.number);
+
+      if (!isSamePitcher) {
+        // 檢查該球員是否曾經登板投球過（避免重複建立新的投手數據實例）
+        let existingIdx = team.pitchers.findIndex(p => p.name === currentPitcherPlayer.name && String(p.number) === String(currentPitcherPlayer.number));
+        if (existingIdx !== -1) {
+          team.currentPitcherIdx = existingIdx;
+        } else {
+          // 為新接替的野手建立投手數據實例，並加入至投手清單
+          const newStats = createPitcherStats(currentPitcherPlayer);
+          team.pitchers.push(newStats);
+          team.currentPitcherIdx = team.pitchers.length - 1;
+        }
+
+        // 若不是經由點擊「換投」按鈕傳入的外援 (即單純場上互換導致)，補上 PBP 文字轉播紀錄
+        if (!pitcherChange) {
+           pbpDetails.push(`因應守位調動，由 #${currentPitcherPlayer.number} ${currentPitcherPlayer.name} 站上投手丘接替投球`);
+        }
+      }
+    }
+
+    const inningName = `${s.inning}局${s.isTop ? '上' : '下'}`;
+    const pbpMessage = `【${inningName} 🛡️ 守備調動】${pbpDetails.join('；')}。`;
+    game.pbpEvents.unshift({
+      id: "PBP_DEF_" + Date.now(),
+      text: pbpMessage,
+      inning: s.inning,
+      isTop: s.isTop,
+      runs: 0,
+      scoreSnapshot: `${s.scoreAway}:${s.scoreHome}`
+    });
+
+    return { success: true };
+  }
+
   function generatePBPDescription(info) {
     const { inningName, batter, resultType, hitText, rbiCount, runsScoredThisPlay, outsAfter, isDoublePlay, dpType } = info;
     let desc = `【${inningName}】第 ${batter.order} 棒 #${batter.number} ${batter.name} `;
@@ -475,36 +833,16 @@
     }
 
     switch (resultType) {
-      case '1B':
-        desc += `敲出 ${hitText} 一壘安打！`;
-        break;
-      case '2B':
-        desc += `擊出 ${hitText} 二壘安打！攻佔得點圈！`;
-        break;
-      case '3B':
-        desc += `掃出 ${hitText} 三壘安打！連奔三個壘包！`;
-        break;
-      case 'HR':
-        desc += `轟出深遠全壘打！帶有 ${rbiCount} 分打點！`;
-        break;
-      case 'BB':
-        desc += `展現選球耐心，獲得四壞球保送上一壘。`;
-        break;
-      case 'IBB':
-        desc += `對手執行戰術，獲得故意四壞保送。`;
-        break;
-      case 'HBP':
-        desc += `遭投手觸身球砸中，保送上一壘。`;
-        break;
-      case 'K':
-        desc += `揮棒落空遭三振出局。(${outsAfter} 出局)`;
-        break;
-      case 'ꓘ':
-        desc += `站著看好球進壘遭見振出局！(${outsAfter} 出局)`;
-        break;
-      case 'Ʞ':
-        desc += `第三好球捕手暴投或捕逸，打者跑上一壘安全！(不死三振 Ʞ)`;
-        break;
+      case '1B': desc += `敲出 ${hitText} 一壘安打！`; break;
+      case '2B': desc += `擊出 ${hitText} 二壘安打！攻佔得點圈！`; break;
+      case '3B': desc += `掃出 ${hitText} 三壘安打！連奔三個壘包！`; break;
+      case 'HR': desc += `轟出深遠全壘打！帶有 ${rbiCount} 分打點！`; break;
+      case 'BB': desc += `展現選球耐心，獲得四壞球保送上一壘。`; break;
+      case 'IBB': desc += `對手執行戰術，獲得故意四壞保送。`; break;
+      case 'HBP': desc += `遭投手觸身球砸中，保送上一壘。`; break;
+      case 'K': desc += `揮棒落空遭三振出局。(${outsAfter} 出局)`; break;
+      case 'ꓘ': desc += `站著看好球進壘遭見振出局！(${outsAfter} 出局)`; break;
+      case 'Ʞ': desc += `第三好球捕手暴投或捕逸，打者跑上一壘安全！(不死三振 Ʞ)`; break;
       case 'GO':
         if (hitText.includes('-')) {
           const parts = hitText.split('-');
@@ -580,8 +918,8 @@
 
         if (firstText.includes('BB')) totalBB++;
         else if (firstText.includes('HBP')) totalHBP++;
-        else if (isSac) totalSH++;
         else if (firstText.includes('SF')) totalSF++;
+        else if (isSac) totalSH++;
         else totalAB++;
 
         if (firstText.includes('1B') || firstText.includes('2B') || firstText.includes('3B') || firstText.includes('HR')) {
@@ -630,28 +968,21 @@
     };
   }
 
-  function updateRunnerScoredInMatrix(game, teamKey, playerIdx, inning, respOrder) {
+  function markLOBInMatrix(game, teamKey, runner, inning) {
+    if (!runner) return;
+    const { playerIdx, startInning, playerKey } = runner;
     const matrix = game.scoreMatrix[teamKey];
-    if (matrix && matrix[playerIdx] && matrix[playerIdx][inning]) {
-      const cell = matrix[playerIdx][inning];
-      cell.paths = cell.paths || {};
-      cell.paths.home = true;
-      cell.center = cell.center || {};
-      cell.center.isRun = true;
-      delete cell.center.isLOB;
-      delete cell.center.outNumber;
-      cell.notations = cell.notations || {};
-      cell.notations.home = { text: '', respBatter: respOrder };
-    }
-  }
-
-  function markLOBInMatrix(game, teamKey, playerIdx, inning) {
-    const matrix = game.scoreMatrix[teamKey];
-    if (matrix && matrix[playerIdx] && matrix[playerIdx][inning]) {
-      const cell = matrix[playerIdx][inning];
+    if (matrix && matrix[playerIdx] && matrix[startInning]) {
+      const cell = matrix[playerIdx][startInning];
       if (!cell.center || !cell.center.isRun) {
         cell.center = cell.center || {};
         cell.center.isLOB = true;
+      }
+      if (game.enhancedMatrix && game.enhancedMatrix[teamKey] && playerKey) {
+        const enhArr = game.enhancedMatrix[teamKey][playerKey]?.[startInning];
+        if (enhArr && enhArr.length > 0) {
+          enhArr[enhArr.length - 1] = JSON.parse(JSON.stringify(cell));
+        }
       }
     }
   }
@@ -702,8 +1033,11 @@
   return {
     createNewGame,
     recordPlay,
+    recordStolenBase,
+    changeDefensiveLineup,
     inferAdvancement,
     checkGameBalance,
-    undoLastAction
+    undoLastAction,
+    updateRunnerAdvancementInMatrix
   };
 }));
