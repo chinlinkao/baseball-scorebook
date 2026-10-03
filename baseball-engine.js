@@ -27,7 +27,9 @@
       so: 0,
       bb: 0,
       r: 0,
-      er: 0
+      er: 0,
+      wp: 0,
+      bk: 0
     };
   }
 
@@ -771,7 +773,6 @@
       pbpDetails.push(`防守方更換投手：#${newPitcher.number} ${newPitcher.name} 上場救援`);
     }
 
-    // 【新增邏輯】處理「場上球員互換守位」導致更換投手的情況，同步更新投手數據統計
     const currentPitcherPlayer = team.lineup.find(p => String(p.pos) === '1');
     if (currentPitcherPlayer) {
       const activePitcherStats = team.pitchers[team.currentPitcherIdx];
@@ -780,18 +781,15 @@
                             String(activePitcherStats.number) === String(currentPitcherPlayer.number);
 
       if (!isSamePitcher) {
-        // 檢查該球員是否曾經登板投球過（避免重複建立新的投手數據實例）
         let existingIdx = team.pitchers.findIndex(p => p.name === currentPitcherPlayer.name && String(p.number) === String(currentPitcherPlayer.number));
         if (existingIdx !== -1) {
           team.currentPitcherIdx = existingIdx;
         } else {
-          // 為新接替的野手建立投手數據實例，並加入至投手清單
           const newStats = createPitcherStats(currentPitcherPlayer);
           team.pitchers.push(newStats);
           team.currentPitcherIdx = team.pitchers.length - 1;
         }
 
-        // 若不是經由點擊「換投」按鈕傳入的外援 (即單純場上互換導致)，補上 PBP 文字轉播紀錄
         if (!pitcherChange) {
            pbpDetails.push(`因應守位調動，由 #${currentPitcherPlayer.number} ${currentPitcherPlayer.name} 站上投手丘接替投球`);
         }
@@ -810,6 +808,144 @@
     });
 
     return { success: true };
+  }
+
+  function recordWildPitch(game, payload) {
+    saveSnapshot(game);
+    const s = game.status;
+    const battingTeamKey = s.isTop ? 'away' : 'home';
+    const fieldingTeamKey = s.isTop ? 'home' : 'away';
+    const batter = game.teams[battingTeamKey].lineup[s.isTop ? s.awayOrderIdx : s.homeOrderIdx];
+    const pitcher = game.teams[fieldingTeamKey].pitchers[game.teams[fieldingTeamKey].currentPitcherIdx];
+
+    if (pitcher) pitcher.wp = (pitcher.wp || 0) + 1;
+    s.balls++;
+
+    let runsScoredThisPlay = 0;
+    const newBases = { 1: s.bases[1], 2: s.bases[2], 3: s.bases[3] };
+    const pbpDetails = [];
+
+    if (payload && payload.advances) {
+      [3, 2, 1].forEach(base => {
+        const runner = s.bases[base];
+        if (!runner) return;
+        const toBase = payload.advances[base];
+        if (!toBase || toBase === 'STAY') return;
+
+        if (toBase === 'SCORE') {
+          updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 'SCORE', batter.order, 'WP');
+          newBases[base] = null;
+          runsScoredThisPlay++;
+          pbpDetails.push(`跑者 ${runner.player.name} 趁暴投回本壘得分`);
+        } else {
+          updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, parseInt(toBase), batter.order, 'WP');
+          newBases[toBase] = runner;
+          newBases[base] = null;
+          pbpDetails.push(`跑者 ${runner.player.name} 趁暴投上 ${toBase} 壘`);
+        }
+      });
+    }
+    s.bases = newBases;
+
+    if (runsScoredThisPlay > 0) {
+      if (s.isTop) {
+        s.scoreAway += runsScoredThisPlay;
+        ensureInningLineScore(game.lineScore.away, s.inning);
+        game.lineScore.away.innings[s.inning - 1] += runsScoredThisPlay;
+        game.lineScore.away.runs += runsScoredThisPlay;
+      } else {
+        s.scoreHome += runsScoredThisPlay;
+        ensureInningLineScore(game.lineScore.home, s.inning);
+        game.lineScore.home.innings[s.inning - 1] += runsScoredThisPlay;
+        game.lineScore.home.runs += runsScoredThisPlay;
+      }
+      if (pitcher) {
+        pitcher.r = (pitcher.r || 0) + runsScoredThisPlay;
+        pitcher.er = (pitcher.er || 0) + runsScoredThisPlay;
+      }
+    }
+
+    const inningName = `${s.inning}局${s.isTop ? '上' : '下'}`;
+    const pbpMessage = `【${inningName}】投手發生暴投 (WP)，壞球數 +1。` + (pbpDetails.length > 0 ? ` ${pbpDetails.join('；')}！` : '');
+    game.pbpEvents.unshift({
+      id: "PBP_WP_" + Date.now(),
+      text: pbpMessage,
+      inning: s.inning,
+      isTop: s.isTop,
+      runs: runsScoredThisPlay,
+      scoreSnapshot: `${s.scoreAway}:${s.scoreHome}`
+    });
+
+    return { success: true, runsScoredThisPlay, balls: s.balls };
+  }
+
+  function recordBalk(game) {
+    saveSnapshot(game);
+    const s = game.status;
+    const battingTeamKey = s.isTop ? 'away' : 'home';
+    const fieldingTeamKey = s.isTop ? 'home' : 'away';
+    const batter = game.teams[battingTeamKey].lineup[s.isTop ? s.awayOrderIdx : s.homeOrderIdx];
+    const pitcher = game.teams[fieldingTeamKey].pitchers[game.teams[fieldingTeamKey].currentPitcherIdx];
+
+    if (pitcher) pitcher.bk = (pitcher.bk || 0) + 1;
+    s.balls++;
+
+    const hasRunner = s.bases[1] || s.bases[2] || s.bases[3];
+    let runsScoredThisPlay = 0;
+    const pbpDetails = [];
+
+    if (hasRunner) {
+      const newBases = { 1: null, 2: null, 3: null };
+      [3, 2, 1].forEach(base => {
+        const runner = s.bases[base];
+        if (!runner) return;
+        if (base === 3) {
+          updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 'SCORE', batter.order, 'BK');
+          runsScoredThisPlay++;
+          pbpDetails.push(`三壘跑者 ${runner.player.name} 奉送回本壘得分`);
+        } else if (base === 2) {
+          updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 3, batter.order, 'BK');
+          newBases[3] = runner;
+          pbpDetails.push(`二壘跑者 ${runner.player.name} 推進三壘`);
+        } else if (base === 1) {
+          updateRunnerAdvancementInMatrix(game, battingTeamKey, runner, 2, batter.order, 'BK');
+          newBases[2] = runner;
+          pbpDetails.push(`一壘跑者 ${runner.player.name} 推進二壘`);
+        }
+      });
+      s.bases = newBases;
+
+      if (runsScoredThisPlay > 0) {
+        if (s.isTop) {
+          s.scoreAway += runsScoredThisPlay;
+          ensureInningLineScore(game.lineScore.away, s.inning);
+          game.lineScore.away.innings[s.inning - 1] += runsScoredThisPlay;
+          game.lineScore.away.runs += runsScoredThisPlay;
+        } else {
+          s.scoreHome += runsScoredThisPlay;
+          ensureInningLineScore(game.lineScore.home, s.inning);
+          game.lineScore.home.innings[s.inning - 1] += runsScoredThisPlay;
+          game.lineScore.home.runs += runsScoredThisPlay;
+        }
+        if (pitcher) {
+          pitcher.r = (pitcher.r || 0) + runsScoredThisPlay;
+          pitcher.er = (pitcher.er || 0) + runsScoredThisPlay;
+        }
+      }
+    }
+
+    const inningName = `${s.inning}局${s.isTop ? '上' : '下'}`;
+    const pbpMessage = `【${inningName}】投手犯規 (BK)！壞球數 +1。` + (hasRunner ? ` 壘上跑者自動推進：${pbpDetails.join('；')}。` : ' 目前壘上無人。');
+    game.pbpEvents.unshift({
+      id: "PBP_BK_" + Date.now(),
+      text: pbpMessage,
+      inning: s.inning,
+      isTop: s.isTop,
+      runs: runsScoredThisPlay,
+      scoreSnapshot: `${s.scoreAway}:${s.scoreHome}`
+    });
+
+    return { success: true, runsScoredThisPlay, balls: s.balls };
   }
 
   function generatePBPDescription(info) {
@@ -888,16 +1024,8 @@
 
   function checkGameBalance(game, teamKey) {
     const team = game.teams[teamKey];
-    let totalPA = 0;
-    let totalAB = 0;
-    let totalBB = 0;
-    let totalHBP = 0;
-    let totalSH = 0;
-    let totalSF = 0;
-    let totalR = 0;
-    let totalH = 0;
-    let totalRBI = 0;
-    let totalK = 0;
+    let totalPA = 0, totalAB = 0, totalBB = 0, totalHBP = 0, totalSH = 0, totalSF = 0;
+    let totalR = 0, totalH = 0, totalRBI = 0, totalK = 0;
 
     const matrix = game.scoreMatrix[teamKey] || {};
 
@@ -925,7 +1053,6 @@
         if (firstText.includes('1B') || firstText.includes('2B') || firstText.includes('3B') || firstText.includes('HR')) {
           totalH++;
         }
-
         if (notations.home && notations.home.rbi) {
           totalRBI += notations.home.rbi;
         }
@@ -941,30 +1068,9 @@
     const formula2Sum = totalR + line.lobs + totalPO;
 
     return {
-      totalPA,
-      totalAB,
-      totalH,
-      totalR,
-      totalRBI,
-      totalBB,
-      totalHBP,
-      totalSH,
-      totalSF,
-      totalK,
-      formula1: {
-        formula: "AB + BB + HBP + SH + SF",
-        sum: formula1Sum,
-        pa: totalPA,
-        isBalanced: isFormula1Balanced
-      },
-      formula2: {
-        formula: "R + LOB + PO",
-        lobs: line.lobs,
-        po: totalPO,
-        sum: formula2Sum,
-        pa: totalPA,
-        isBalanced: (totalPA === formula2Sum)
-      }
+      totalPA, totalAB, totalH, totalR, totalRBI, totalBB, totalHBP, totalSH, totalSF, totalK,
+      formula1: { formula: "AB + BB + HBP + SH + SF", sum: formula1Sum, pa: totalPA, isBalanced: isFormula1Balanced },
+      formula2: { formula: "R + LOB + PO", lobs: line.lobs, po: totalPO, sum: formula2Sum, pa: totalPA, isBalanced: (totalPA === formula2Sum) }
     };
   }
 
@@ -1017,15 +1123,7 @@
   function getPositionZhName(code) {
     const cleanCode = String(code).trim().replace(/[^0-9]/g, '');
     const map = {
-      '1': '投手',
-      '2': '捕手',
-      '3': '一壘手',
-      '4': '二壘手',
-      '5': '三壘手',
-      '6': '游擊手',
-      '7': '左外野手',
-      '8': '中外野手',
-      '9': '右外野手'
+      '1': '投手', '2': '捕手', '3': '一壘手', '4': '二壘手', '5': '三壘手', '6': '游擊手', '7': '左外野手', '8': '中外野手', '9': '右外野手'
     };
     return map[cleanCode] || (cleanCode ? `${cleanCode}號守備員` : '防守方');
   }
@@ -1034,6 +1132,8 @@
     createNewGame,
     recordPlay,
     recordStolenBase,
+    recordWildPitch,
+    recordBalk,
     changeDefensiveLineup,
     inferAdvancement,
     checkGameBalance,

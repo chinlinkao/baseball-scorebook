@@ -656,7 +656,6 @@
       renderAll();
     });
 
-    // 【修正重點】不再以 defaultOrder 過濾名單，而是取背號排序好的前 9 位球員作為 1-9 棒
     function initAwayLineup() {
       const starters = PIRATES_ROSTER.slice(0, 9);
       awayLineupState = starters.map((p, idx) => ({
@@ -666,7 +665,12 @@
         customName: "",
         pos: String(idx + 1)
       }));
-      awayPitcherState = { playerId: "P18", customNum: "", customName: "" };
+      const p1Slot = awayLineupState.find(slot => slot.pos === '1');
+      if (p1Slot) {
+        awayPitcherState = { playerId: p1Slot.playerId, customNum: p1Slot.customNum, customName: p1Slot.customName };
+      } else {
+        awayPitcherState = { playerId: "P18", customNum: "", customName: "" };
+      }
     }
 
     function initHomeLineup() {
@@ -678,7 +682,12 @@
         customName: "",
         pos: String(idx + 1)
       }));
-      homePitcherState = { playerId: "H09", customNum: "", customName: "" };
+      const p1Slot = homeLineupState.find(slot => slot.pos === '1');
+      if (p1Slot) {
+        homePitcherState = { playerId: p1Slot.playerId, customNum: p1Slot.customNum, customName: p1Slot.customName };
+      } else {
+        homePitcherState = { playerId: "H09", customNum: "", customName: "" };
+      }
     }
 
     function setDeviceMode(mode) {
@@ -846,6 +855,15 @@
     function onPlayerChange(teamKey, idx, newPlayerId) {
       const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
       lineup[idx].playerId = newPlayerId;
+
+      if (lineup[idx].pos === '1') {
+        const pitcherState = (teamKey === 'away') ? awayPitcherState : homePitcherState;
+        pitcherState.playerId = newPlayerId;
+        pitcherState.customNum = lineup[idx].customNum;
+        pitcherState.customName = lineup[idx].customName;
+        renderPitcherSection(teamKey);
+      }
+      
       renderLineupTable(teamKey);
     }
 
@@ -853,11 +871,33 @@
       const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
       if (field === 'num') lineup[idx].customNum = val.trim();
       if (field === 'name') lineup[idx].customName = val.trim();
+
+      if (lineup[idx].pos === '1' && lineup[idx].playerId === 'CUSTOM') {
+        const pitcherState = (teamKey === 'away') ? awayPitcherState : homePitcherState;
+        if (field === 'num') {
+          pitcherState.customNum = val.trim();
+          const numInput = document.getElementById(`${teamKey}-pitcher-custom-num`);
+          if (numInput) numInput.value = val.trim();
+        }
+        if (field === 'name') {
+          pitcherState.customName = val.trim();
+          const nameInput = document.getElementById(`${teamKey}-pitcher-custom-name`);
+          if (nameInput) nameInput.value = val.trim();
+        }
+      }
     }
 
     function onPosChange(teamKey, idx, newPos) {
       const lineup = (teamKey === 'away') ? awayLineupState : homeLineupState;
       lineup[idx].pos = newPos;
+
+      if (newPos === '1') {
+        const pitcherState = (teamKey === 'away') ? awayPitcherState : homePitcherState;
+        pitcherState.playerId = lineup[idx].playerId;
+        pitcherState.customNum = lineup[idx].customNum;
+        pitcherState.customName = lineup[idx].customName;
+        renderPitcherSection(teamKey);
+      }
     }
 
     function resetPreset(teamKey) {

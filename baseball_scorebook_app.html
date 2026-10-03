@@ -931,6 +931,8 @@
                     <th>全壘打 (HR)</th>
                     <th>奪三振 (SO)</th>
                     <th>四死球 (BB)</th>
+                    <th>暴投 (WP)</th>
+                    <th>犯規 (BK)</th>
                     <th>失分 (R)</th>
                     <th>自責分 (ER)</th>
                   </tr>
@@ -1021,6 +1023,12 @@
             </button>
             <button class="key-btn walk" onclick="openStolenBaseModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;">
               盜壘 <span class="sub">SB 盜壘</span>
+            </button>
+            <button class="key-btn walk" onclick="openWildPitchModal()">
+              暴投 <span class="sub">WP</span>
+            </button>
+            <button class="key-btn out" onclick="triggerBalk()" style="background: #fefce8; border-color: #fef08a; color: #a16207;">
+              投手犯規 <span class="sub">BK</span>
             </button>
             <button class="key-btn out" onclick="openAdvanceModal('K')">
               揮三振 <span class="sub">K</span>
@@ -1208,6 +1216,25 @@
       <div class="modal-actions">
         <button class="btn-act secondary" onclick="closeStolenBaseModal()">取消</button>
         <button class="btn-act primary" onclick="commitStolenBase()">確認送出盜壘戰術 ✔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 暴投跑者進壘確認彈窗 -->
+  <div class="modal-backdrop" id="wildpitch-dialog" style="display: none;">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="title">⚾ 暴投 (Wild Pitch) 跑者進壘確認</div>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+        請選擇壘包上跑者的進壘狀況 (打者壞球數將自動 +1)：
+      </p>
+
+      <div id="wp-dialog-runners-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+        <!-- JS 動態生成壘上跑者選項 -->
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-act secondary" onclick="closeWildPitchModal()">取消</button>
+        <button class="btn-act primary" onclick="commitWildPitch()">確認送出 ✔</button>
       </div>
     </div>
   </div>
@@ -1405,6 +1432,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       initFullGame();
+      setDeviceView('mobile'); // 預設為手機速記模式
       refreshDashboard();
       renderScorebookMatrix();
       renderPitcherTable();
@@ -1433,8 +1461,6 @@
       }
     }
 
-    // 【修正重點】處理沒有外部寫入陣容時的預設名單備援，確保與升冪排序且取前9名的邏輯一致
-    // 同時正確帶入從 index.html 儲存的投手狀態，而不是預設"黃思學"、"鄭凱文"
     function initFullGame() {
       let awayStarters = [];
       let homeStarters = [];
@@ -1577,7 +1603,6 @@
       return res;
     }
 
-    // 代打 (PH) / 代跑 (PR) 功能
     function openRosterDialog() {
       const dialog = document.getElementById('roster-dialog');
       const list = document.getElementById('roster-dialog-list');
@@ -2513,6 +2538,8 @@
             <td>${p.hr || 0}</td>
             <td>${p.so || 0}</td>
             <td>${p.bb || 0}</td>
+            <td>${p.wp || 0}</td>
+            <td>${p.bk || 0}</td>
             <td>${p.r || 0}</td>
             <td>${p.er || 0}</td>
           </tr>
@@ -2655,6 +2682,93 @@
         'DH': '指打 DH', 'BN': '板凳 BN', '代': '代打 PH', '跑': '代跑 PR'
       };
       return map[pos] || pos;
+    }
+
+    function recordWildPitchWithEnhancedMatrix(payload) {
+      saveEnhancedSnapshot();
+      return BaseballEngine.recordWildPitch(currentGame, payload);
+    }
+
+    function recordBalkWithEnhancedMatrix() {
+      saveEnhancedSnapshot();
+      return BaseballEngine.recordBalk(currentGame);
+    }
+
+    function openWildPitchModal() {
+      const s = currentGame.status;
+      const hasRunner = s.bases[1] || s.bases[2] || s.bases[3];
+      const listContainer = document.getElementById('wp-dialog-runners-list');
+
+      if (!hasRunner) {
+        listContainer.innerHTML = '<div style="color: #64748b; font-size: 0.9rem; text-align: center;">目前壘上無人，僅增加 1 個壞球數。</div>';
+      } else {
+        let html = '';
+        [3, 2, 1].forEach(b => {
+          const runner = s.bases[b];
+          if (runner) {
+            html += `
+              <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: #1e293b; margin-bottom: 6px;">
+                  📍 ${b}壘跑者：${runner.player.name} (#${runner.player.number})
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #475569;">進壘至：</label>
+                  <select class="select-input" id="wp-select-runner-${b}" style="flex: 1;">
+                    <option value="STAY" selected>留原壘 (無進壘)</option>
+                    ${b === 1 ? '<option value="2">推進二壘</option><option value="3">推進三壘</option><option value="SCORE">回本壘得分</option>' : ''}
+                    ${b === 2 ? '<option value="3">推進三壘</option><option value="SCORE">回本壘得分</option>' : ''}
+                    ${b === 3 ? '<option value="SCORE">回本壘得分</option>' : ''}
+                  </select>
+                </div>
+              </div>
+            `;
+          }
+        });
+        listContainer.innerHTML = html;
+      }
+      document.getElementById('wildpitch-dialog').style.display = 'flex';
+    }
+
+    function closeWildPitchModal() {
+      document.getElementById('wildpitch-dialog').style.display = 'none';
+    }
+
+    function commitWildPitch() {
+      const advances = {};
+      [1, 2, 3].forEach(b => {
+        const el = document.getElementById(`wp-select-runner-${b}`);
+        if (el) advances[b] = el.value;
+      });
+
+      const res = recordWildPitchWithEnhancedMatrix({ advances });
+      closeWildPitchModal();
+      
+      if (res.balls >= 4) {
+        alert("壞球數已達 4 顆，將開啟保送視窗！");
+        openAdvanceModal('BB');
+      } else {
+        refreshDashboard();
+        renderScorebookMatrix();
+        renderPitcherTable();
+        renderPBPFeed();
+        checkBalances();
+      }
+    }
+
+    function triggerBalk() {
+      if (confirm("確定發生投手犯規 (BK) 嗎？\\n壘上跑者將自動推進一個壘包，打者壞球數 +1。")) {
+        const res = recordBalkWithEnhancedMatrix();
+        if (res.balls >= 4) {
+          alert("壞球數已達 4 顆，將開啟保送視窗！");
+          openAdvanceModal('BB');
+        } else {
+          refreshDashboard();
+          renderScorebookMatrix();
+          renderPitcherTable();
+          renderPBPFeed();
+          checkBalances();
+        }
+      }
     }
   </script>
 </body>
