@@ -32,7 +32,6 @@ const PIRATES_ROSTER = [
   { id: "P89", number: "89", name: "林威志", defaultPos: "BN" },
   { id: "P99", number: "99", name: "王維新", defaultPos: "BN" },
   { id: "P00", number: "00", name: "顏平和", defaultPos: "BN" }
-  
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

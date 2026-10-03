@@ -746,7 +746,37 @@
     .print-header-ctba {
       display: none;
     }
-  </style>
+  
+    /* ================= 新增：手機速記模式下的排版順序與卷軸 ================= */
+    .app-container.mode-mobile .dashboard-grid {
+      display: flex;
+      flex-direction: column;
+    }
+    .app-container.mode-mobile .col-left,
+    .app-container.mode-mobile .col-right {
+      display: contents;
+    }
+    .app-container.mode-mobile .mobile-order-score { order: 1; }
+    .app-container.mode-mobile .mobile-order-batter { order: 2; }
+    .app-container.mode-mobile .mobile-order-pitch { order: 3; }
+    .app-container.mode-mobile .mobile-order-keypad { order: 4; }
+    .app-container.mode-mobile .mobile-order-pbp { order: 5; }
+    .app-container.mode-mobile .col-left-card { order: 6; }
+    .app-container.mode-mobile .mobile-order-buttons { order: 7; }
+
+    .pitcher-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .pitcher-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      min-width: 650px;
+    }
+
+    </style>
 </head>
 <body>
 
@@ -837,8 +867,8 @@
     <div class="dashboard-grid">
 
       <!-- 左欄：早稻田數位紙本 9×9 大矩陣與統計表 -->
-      <div>
-        <div class="card">
+      <div class="col-left">
+        <div class="card col-left-card">
           <div class="card-header">
             <div class="card-title">
               <span>📋 早稻田式紙本紀錄簿 (逐局自動繪製)</span>
@@ -888,26 +918,28 @@
           <!-- 下方投手統計欄 -->
           <div style="margin-top: 14px;">
             <div class="card-title" style="font-size: 0.85rem;">⚾ 投手投球數據統計 (Pitching Stats)</div>
-            <table class="pitcher-table">
-              <thead>
-                <tr>
-                  <th>投手背號/姓名</th>
-                  <th>勝敗</th>
-                  <th>局數 (IP)</th>
-                  <th>投球數 (NP)</th>
-                  <th>面對打席 (BF)</th>
-                  <th>被安打 (H)</th>
-                  <th>全壘打 (HR)</th>
-                  <th>奪三振 (SO)</th>
-                  <th>四死球 (BB)</th>
-                  <th>失分 (R)</th>
-                  <th>自責分 (ER)</th>
-                </tr>
-              </thead>
-              <tbody id="pitcher-tbody">
-                <!-- JS 動態生成 -->
-              </tbody>
-            </table>
+            <div class="pitcher-table-wrap">
+              <table class="pitcher-table">
+                <thead>
+                  <tr>
+                    <th>投手背號/姓名</th>
+                    <th>勝敗</th>
+                    <th>局數 (IP)</th>
+                    <th>投球數 (NP)</th>
+                    <th>面對打席 (BF)</th>
+                    <th>被安打 (H)</th>
+                    <th>全壘打 (HR)</th>
+                    <th>奪三振 (SO)</th>
+                    <th>四死球 (BB)</th>
+                    <th>失分 (R)</th>
+                    <th>自責分 (ER)</th>
+                  </tr>
+                </thead>
+                <tbody id="pitcher-tbody">
+                  <!-- JS 動態生成 -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- 早稻田平衡檢核等式 -->
@@ -923,9 +955,9 @@
       </div>
 
       <!-- 右欄：打席觸控輸入主控台 -->
-      <div>
+      <div class="col-right">
         <!-- 當前打者卡片 -->
-        <div class="matchup-container">
+        <div class="matchup-container mobile-order-batter">
           <div class="batter-profile">
             <span class="batter-tag" id="profile-order-tag">第 1 棒 ‧ 次打席</span>
             <div class="batter-title">
@@ -948,76 +980,80 @@
         </div>
 
         <!-- 1. 逐球點燈按鈕 -->
-        <div class="card-header" style="margin-bottom: 6px;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">逐球追蹤 (可選)</span>
-          <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="clearCount()">重置球數 ↺</span>
-        </div>
-        <div class="pitch-strip">
-          <button class="pitch-key key-ball" onclick="onPitchInput('ball')">壞球 (B)</button>
-          <button class="pitch-key key-strike" onclick="onPitchInput('called_strike')">見好 (S)</button>
-          <button class="pitch-key key-strike" onclick="onPitchInput('swinging_strike')">空振 (S)</button>
-          <button class="pitch-key key-foul" onclick="onPitchInput('foul')" style="background: #fff7ed; border-color: #ffedd5; color: #c2410c;">界外球 (F)</button>
-          <button class="pitch-key" onclick="onPitchInput('put_in_play')" style="display: none; background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 800;">擊球進場</button>
+        <div class="mobile-order-pitch">
+          <div class="card-header" style="margin-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">逐球追蹤 (可選)</span>
+            <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="clearCount()">重置球數 ↺</span>
+          </div>
+          <div class="pitch-strip">
+            <button class="pitch-key key-ball" onclick="onPitchInput('ball')">壞球 (B)</button>
+            <button class="pitch-key key-strike" onclick="onPitchInput('called_strike')">見好 (S)</button>
+            <button class="pitch-key key-strike" onclick="onPitchInput('swinging_strike')">空振 (S)</button>
+            <button class="pitch-key key-foul" onclick="onPitchInput('foul')" style="background: #fff7ed; border-color: #ffedd5; color: #c2410c;">界外球 (F)</button>
+            <button class="pitch-key" onclick="onPitchInput('put_in_play')" style="display: none; background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; font-weight: 800;">擊球進場</button>
+          </div>
         </div>
 
         <!-- 2. 打擊與上壘結果大按鍵區 (點選後展開下一級細項選擇) -->
-        <div class="card-header" style="margin-bottom: 6px;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">打擊與上壘結果 (點擊展開下一級選項)</span>
-        </div>
-        <div class="keypad">
-          <button class="key-btn hit" onclick="openAdvanceModal('1B')">
-            一安 <span class="sub">1B</span>
-          </button>
-          <button class="key-btn hit" onclick="openAdvanceModal('2B')">
-            二安 <span class="sub">2B</span>
-          </button>
-          <button class="key-btn hit" onclick="openAdvanceModal('3B')">
-            三安 <span class="sub">3B</span>
-          </button>
-          <button class="key-btn hit" onclick="openAdvanceModal('HR')">
-            全壘打 <span class="sub">HR</span>
-          </button>
+        <div class="mobile-order-keypad">
+          <div class="card-header" style="margin-bottom: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">打擊與上壘結果 (點擊展開下一級選項)</span>
+          </div>
+          <div class="keypad">
+            <button class="key-btn hit" onclick="openAdvanceModal('1B')">
+              一安 <span class="sub">1B</span>
+            </button>
+            <button class="key-btn hit" onclick="openAdvanceModal('2B')">
+              二安 <span class="sub">2B</span>
+            </button>
+            <button class="key-btn hit" onclick="openAdvanceModal('3B')">
+              三安 <span class="sub">3B</span>
+            </button>
+            <button class="key-btn hit" onclick="openAdvanceModal('HR')">
+              全壘打 <span class="sub">HR</span>
+            </button>
 
-          <button class="key-btn walk" onclick="openAdvanceModal('BB')">
-            四壞 <span class="sub">BB</span>
-          </button>
-          <button class="key-btn walk" onclick="openAdvanceModal('HBP')">
-            觸身 <span class="sub">HBP</span>
-          </button>
-          <button class="key-btn walk" onclick="openStolenBaseModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;">
-            盜壘 <span class="sub">SB 盜壘</span>
-          </button>
-          <button class="key-btn out" onclick="openAdvanceModal('K')">
-            揮三振 <span class="sub">K</span>
-          </button>
+            <button class="key-btn walk" onclick="openAdvanceModal('BB')">
+              四壞 <span class="sub">BB</span>
+            </button>
+            <button class="key-btn walk" onclick="openAdvanceModal('HBP')">
+              觸身 <span class="sub">HBP</span>
+            </button>
+            <button class="key-btn walk" onclick="openStolenBaseModal()" style="background: #f0fdf4; border-color: #bbf7d0; color: #15803d;">
+              盜壘 <span class="sub">SB 盜壘</span>
+            </button>
+            <button class="key-btn out" onclick="openAdvanceModal('K')">
+              揮三振 <span class="sub">K</span>
+            </button>
 
-          <button class="key-btn out" onclick="openAdvanceModal('ꓘ')">
-            見三振 <span class="sub">ꓘ</span>
-          </button>
+            <button class="key-btn out" onclick="openAdvanceModal('ꓘ')">
+              見三振 <span class="sub">ꓘ</span>
+            </button>
 
-          <button class="key-btn out" onclick="openAdvanceModal('GO')">
-            滾地刺 <span class="sub">6-3 / 4-3</span>
-          </button>
-          <button class="key-btn out" onclick="openAdvanceModal('FO')">
-            飛球接 <span class="sub">F7 / F8</span>
-          </button>
-          <button class="key-btn out" onclick="openDoublePlayModal()" style="background: #fef2f2; border-color: #fca5a5; color: #991b1b;">
-            雙殺打 <span class="sub">DP 雙殺</span>
-          </button>
+            <button class="key-btn out" onclick="openAdvanceModal('GO')">
+              滾地刺 <span class="sub">6-3 / 4-3</span>
+            </button>
+            <button class="key-btn out" onclick="openAdvanceModal('FO')">
+              飛球接 <span class="sub">F7 / F8</span>
+            </button>
+            <button class="key-btn out" onclick="openDoublePlayModal()" style="background: #fef2f2; border-color: #fca5a5; color: #991b1b;">
+              雙殺打 <span class="sub">DP 雙殺</span>
+            </button>
 
-          <button class="key-btn walk" onclick="openAdvanceModal('E')">
-            失誤 <span class="sub">E</span>
-          </button>
-          <button class="key-btn out" onclick="openAdvanceModal('SAC')">
-            犧短 <span class="sub">[1-3]</span>
-          </button>
-          <button class="key-btn out" onclick="openAdvanceModal('SF')" style="background: #f0f9ff; border-color: #bae6fd; color: #0369a1;">
-            犧飛 <span class="sub">SF</span>
-          </button>
+            <button class="key-btn walk" onclick="openAdvanceModal('E')">
+              失誤 <span class="sub">E</span>
+            </button>
+            <button class="key-btn out" onclick="openAdvanceModal('SAC')">
+              犧短 <span class="sub">[1-3]</span>
+            </button>
+            <button class="key-btn out" onclick="openAdvanceModal('SF')" style="background: #f0f9ff; border-color: #bae6fd; color: #0369a1;">
+              犧飛 <span class="sub">SF</span>
+            </button>
+          </div>
         </div>
 
         <!-- 即時逐打席轉播文字 (PBP) -->
-        <div class="card" style="margin-bottom: 10px;">
+        <div class="card mobile-order-pbp" style="margin-bottom: 10px;">
           <div class="card-header">
             <span class="card-title">🎙️ 逐打席中文化賽況轉播 (PBP)</span>
             <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="copyAllPBP()">複製報導 ⎘</span>
@@ -1028,7 +1064,7 @@
         </div>
 
         <!-- 底部輔助列 (保留代打/代跑與守備調動) -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+        <div class="mobile-order-buttons" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
           <button class="btn-act secondary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="openRosterDialog()">👥 代打/代跑</button>
           <button class="btn-act secondary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="openDefensiveDialog()">🛡️ 守備調動</button>
           <button class="btn-act secondary" style="padding: 8px 2px; font-size: 0.78rem;" onclick="undoAction()">↩ 復原</button>
@@ -1036,7 +1072,7 @@
         </div>
       </div>
     </div>
-  </main>
+
 
   <!-- 守備調動與換投彈窗 (Defensive Lineup & Pitcher Change) -->
   <div class="modal-backdrop" id="defensive-dialog" style="display: none;">
@@ -1398,9 +1434,12 @@
     }
 
     // 【修正重點】處理沒有外部寫入陣容時的預設名單備援，確保與升冪排序且取前9名的邏輯一致
+    // 同時正確帶入從 index.html 儲存的投手狀態，而不是預設"黃思學"、"鄭凱文"
     function initFullGame() {
       let awayStarters = [];
       let homeStarters = [];
+      let awayPitcher = null;
+      let homePitcher = null;
 
       const savedSetupStr = localStorage.getItem('baseball_game_setup');
       if (savedSetupStr) {
@@ -1408,6 +1447,8 @@
           const setup = JSON.parse(savedSetupStr);
           awayStarters = setup.away?.lineup || [];
           homeStarters = setup.home?.lineup || [];
+          awayPitcher = setup.away?.pitcher || null;
+          homePitcher = setup.home?.pitcher || null;
         } catch (e) {
           console.error("載入賽前名單失敗，退回預設陣容:", e);
         }
@@ -1449,14 +1490,17 @@
         }));
       }
 
+      const finalAwayPitchers = awayPitcher ? [awayPitcher] : [{ name: "黃思學", number: "18" }];
+      const finalHomePitchers = homePitcher ? [homePitcher] : [{ name: "鄭凱文", number: "19" }];
+
       currentGame = BaseballEngine.createNewGame({
         title: "2026年台中市棒球聯賽",
         awayName: "台中小海盜大叔隊",
         awayLineup: awayStarters,
-        awayPitchers: [{ name: "黃思學", number: "18" }],
+        awayPitchers: finalAwayPitchers,
         homeName: "台中獵犬棒球隊",
         homeLineup: homeStarters,
-        homePitchers: [{ name: "鄭凱文", number: "19" }]
+        homePitchers: finalHomePitchers
       });
 
       currentGame.teams.away.orderSlots = awayStarters.map((p, idx) => [{
@@ -1757,7 +1801,7 @@
       const dropdown = document.getElementById('def-player-dropdown');
       dropdown.innerHTML = roster.map(p => `<option value="${p.number},${p.name}">#${p.number} ${p.name}</option>`).join('');
 
-      document.getElementById('def-select-title').textContent = `🛡️️ 板凳代守 ─ #${posCode} 位 (${getPosChinese(String(posCode))})`;
+      document.getElementById('def-select-title').textContent = `🛡 板凳代守 ─ #${posCode} 位 (${getPosChinese(String(posCode))})`;
       document.getElementById('def-select-label').textContent = `請選擇替代原守備員 #${oldPlayer.number} ${oldPlayer.name} 的球員：`;
 
       currentDefSelectCallback = function() {
